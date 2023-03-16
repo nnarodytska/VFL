@@ -29,14 +29,16 @@ class MLP(nn.Module):
         super(MLP, self).__init__()
         self.fc1 = nn.Linear(input_size, 50)
         self.fc2 = nn.Linear(50, 50)
-        self.fc3 = nn.Linear(50, output_size)
+        self.fc3 = nn.Linear(50, 20)
+        self.fc4 = nn.Linear(20, output_size)
         self.relu = nn.ReLU()
 
     def forward(self, x):
         x = x.view(x.shape[0], -1)
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = self.relu(self.fc3(x))
+        x = self.fc4(x)
         return x
 
 class SmallMLP(nn.Module):

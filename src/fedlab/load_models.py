@@ -20,7 +20,8 @@ from standalone_setup import setup_args
 from basic_client_modifed import SGDSerialClientTrainerExt
 
 from fedlab.contrib.algorithm.basic_server import SyncServerHandler
-
+from fedlab.utils.functional import evaluate
+from torch import nn
 
 args = setup_args()
 model =MLP(784, 10).cuda()
@@ -67,5 +68,12 @@ standalone_eval = EvalPipeline(handler=handler, trainer=trainer, test_loader=tes
 
 standalone_eval.load_global_model(path = args.models_path)
 
-#standalone_eval.personalize(nb_rounds=args.personalization_steps, save_path= args.models_path, per_lr = args.lr/10, save = False)
+###############################################
+# we have global model here
+###############################################
+print(handler.model)
+loss, acc = evaluate(handler.model, nn.CrossEntropyLoss(), test_loader)
+print("loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
+
+standalone_eval.personalize(nb_rounds=args.personalization_steps, save_path= args.models_path, per_lr = args.lr/5, save = True)
 

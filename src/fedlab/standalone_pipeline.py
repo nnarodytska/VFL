@@ -32,7 +32,7 @@ class EvalPipeline(StandalonePipeline):
 
     def personalize(self, nb_rounds, save_path, per_lr, save= True):
 
-        self.trainer.setup_lr(args.lr/10)
+        self.trainer.setup_lr(per_lr/10)
 
         # server side
         clients = list(range(self.handler.num_clients))
@@ -47,7 +47,7 @@ class EvalPipeline(StandalonePipeline):
         #     print(p_, p)
         # exit()
 
-        # client side
+        #client side
         for id, client in enumerate(clients):
             data_loader = self.trainer.dataset.get_dataloader(client, self.trainer.batch_size)
             loss, acc = evaluate(self.handler.model, nn.CrossEntropyLoss(), data_loader)
@@ -73,11 +73,14 @@ class EvalPipeline(StandalonePipeline):
         torch.save(model, path+ f'/{name}.pt')
 
     def load_global_model(self, path):
-        print(path)
-
         assert(os.path.exists(path))
-        
         self.handler._model = torch.load(path+'/global.pt').cuda()
+
+    def load_model(self, path):
+       
+        assert(os.path.exists(path)) 
+        self.handler._model = torch.load(path+'/global.pt').cuda()
+ 
 
         # for p_, p in zip(self.handler._model.parameters(), self.handler.model.parameters()):
         #     print(p_, p)
