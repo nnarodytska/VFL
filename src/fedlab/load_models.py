@@ -72,8 +72,9 @@ standalone_eval.load_global_model(path = args.models_path)
 # we have global model here
 ###############################################
 print(handler.model)
+# evalution of `global` trainign set
 loss, acc = evaluate(handler.model, nn.CrossEntropyLoss(), test_loader)
 print("loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
 
-standalone_eval.personalize(nb_rounds=args.personalization_steps, save_path= args.models_path, per_lr = args.lr/5, save = True)
+#standalone_eval.personalize(nb_rounds=args.personalization_steps, save_path= args.models_path, per_lr = args.personalization_lr, save = False)
 

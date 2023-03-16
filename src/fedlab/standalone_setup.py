@@ -19,11 +19,14 @@ def setup_args():
     parser.add_argument("--partition", type=str, default ="noniid-#label")
     parser.add_argument("--root_path", type=str, default ='../../datasets/mnist/')
     parser.add_argument("--personalization_steps", type=int, default = 25)
+    parser.add_argument("--personalization_lr", type=int, default = None)
 
 
 
     args = parser.parse_args()
 
+    if args.personalization_lr is None:
+        args.personalization_lr = args.lr/5
 
     args.data_path = f"{args.root_path}/partition_{args.partition}_major_classes_num_{args.major_classes_num}_clients_{args.total_client}_dir_alpha_{args.alpha}_seed_{args.seed}"
     args.models_path = f"{args.data_path}/models/batch_size_{args.batch_size}_com_round_{args.com_round}_epochs_{args.epochs}_sample_ratio_{args.sample_ratio}_personalization_steps_{args.personalization_steps}"

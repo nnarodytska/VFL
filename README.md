@@ -1,5 +1,12 @@
 # VFL
 
+Install the main framework
+
+```
+pip3 install fedlab
+```
+
+
 To train:
 
 ```
