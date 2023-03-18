@@ -40,6 +40,12 @@ class MLP(nn.Module):
         x = self.relu(self.fc3(x))
         x = self.fc4(x)
         return x
+    
+    def input_to_representation(self, x):
+        x = x.view(x.shape[0], -1)
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        return x
 
 class SmallMLP(nn.Module):
     def __init__(self, input_size, output_size):
