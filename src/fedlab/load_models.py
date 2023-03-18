@@ -112,9 +112,9 @@ H_test = handler.model.input_to_representation(X_test)
 
 invariants = get_invariant(H_train.detach().cpu().numpy(), C_train)
 
-print(f'{len(invariants[True])} for concept "Curvature" presented, {len(invariants[False])} for concept "Curvature" not presented')
-print(f'{invariants[True][0][-1]} of {int(sum(C_train))} positive samples support concept presented')
-print(f'{invariants[False][0][-1]} of {int(len(C_train) - sum(C_train))} negative samples support not presented')
+print(f'{len(invariants[True])} rules for concept "Curvature" present, {len(invariants[False])} rules for concept "Curvature" not present')
+print(f'{invariants[True][0][-1]} of {int(sum(C_train))} positive samples support first rule for concept present')
+print(f'{invariants[False][0][-1]} of {int(len(C_train) - sum(C_train))} negative samples support first rule for concept not present')
 
 validate(invariants[True][0], True, H_test, C_test)
 validate(invariants[False][0], False, H_test, C_test)
