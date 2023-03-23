@@ -275,7 +275,7 @@ def get_tree(activation_vectors, labels):
     return dtree
 
 def validate_n_invariants(invariants, label_trgt, activation_vectors, labels_gt):
-  # Returns the precision and recall for the given invariant; label_trgt is the label associated with the invariant
+  # Returns the precision and recall for the given invariants; label_trgt is the label associated with the invariant
   # invariant is in the form of [neuron_ids, neuron_sig, nsamples] triple
   # labels_gt are the ground truth labels    
   prec_recall_num = 0
@@ -311,3 +311,17 @@ def validate_n_invariants(invariants, label_trgt, activation_vectors, labels_gt)
       else:
           print("CLASS;", label_trgt, ";Precision:",float(prec_recall_num/prec_denom)*100,";Recall:", float(prec_recall_num/recall_denom)*100)
           return float(prec_recall_num/prec_denom)*100, float(prec_recall_num/recall_denom)*100
+      
+def is_rule_sat(rule, activation_vector):
+  # Checks if the given rule is satisfied by the activation vector. Rule is a triple of the form (class, neuron_ids, neuron_sig)
+  neurons = []
+  for indx in range(0,len(rule[1])):
+      neurons.append(-1)
+      neurons.append(rule[1][indx])
+
+  match = check_pattern_inter(activation_vector, activation_vector, [neurons],[rule[2]])
+
+  if match == -1:
+    return False
+  else:
+    return True

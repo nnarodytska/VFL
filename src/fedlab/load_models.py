@@ -19,8 +19,8 @@ from standalone_pipeline import EvalPipeline
 from partitioned_mnist import PartitionedMNIST
 from standalone_setup import setup_args
 from basic_client_modifed import SGDSerialClientTrainerExt
-from dataset import generate_mnist_concept_dataset
 from decision_tree import get_invariant, validate
+from utils import generate_concept_dataset
 
 
 from fedlab.contrib.algorithm.basic_server import SyncServerHandler
@@ -83,9 +83,11 @@ print("loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
 
 ## extracting rules
 
-data_dir = Path.cwd()/"../../datasets/mnist"
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
+train_data = torchvision.datasets.MNIST(root="../../datasets/mnist/",
+                                       train=True,
+                                       transform=transforms.ToTensor())
 concept_to_class = {
     "Loop": [0, 2, 6, 8, 9],
     "Vertical Line": [1, 4, 7],
@@ -93,14 +95,10 @@ concept_to_class = {
     "Curvature": [0, 2, 3, 5, 6, 8, 9],
 }
 # Load concept sets
-X_train, C_train = generate_mnist_concept_dataset(concept_to_class["Curvature"],
-                                               data_dir,
-                                               train=True,
+X_train, C_train = generate_concept_dataset(train_data, concept_to_class["Curvature"],
                                                subset_size=10000, 
                                                random_seed=42)
-X_test, C_test = generate_mnist_concept_dataset(concept_to_class["Curvature"],
-                                               data_dir,
-                                               train=False,
+X_test, C_test = generate_concept_dataset(train_data, concept_to_class["Curvature"],
                                                subset_size=1000, 
                                                random_seed=42)
 
@@ -119,6 +117,12 @@ print(f'{invariants[False][0][-1]} of {int(len(C_train) - sum(C_train))} negativ
 validate(invariants[True][0], True, H_test, C_test)
 validate(invariants[False][0], False, H_test, C_test)
 
+# We choose to enforce only two rules during personalization; the top rule for each of concept present and absent 
+rules = []
+rules.append((True, invariants[True][0][0], invariants[True][0][1]))
+rules.append((False, invariants[False][0][0], invariants[False][0][1]))
+
+trainer.setup_rules(rules)
 
 #standalone_eval.personalize(nb_rounds=args.personalization_steps, save_path= args.models_path, per_lr = args.personalization_lr, save = False)
 
