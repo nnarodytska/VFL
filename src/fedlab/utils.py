@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader, Dataset, BatchSampler
 from typing import List, Tuple, Dict
 from pathlib import Path
 
-from decision_tree import is_rule_sat
+from decision_tree import is_rule_sat, dist_to_rule
 
 def generate_concept_dataset(dataset: Dataset, concept_classes: List[int], subset_size: int,
                                    random_seed: int) -> Tuple:
@@ -69,9 +69,13 @@ def map_inputs_to_rules(model, rules, data_loader):
     
     return input_to_rule_map
 
-
 def calculate_dist_to_rule(input_to_rule_map, latent_vectors, rules):
-    raise NotImplementedError
+    dists = []
+    for idx,latent_vector in latent_vectors:
+        rule = rules[input_to_rule_map[idx]]
+        dists.append(dist_to_rule(rule, latent_vector))
+    return torch.tensor(dists)
+
 
 def calculate_similarity_loss(dist_rep_to_rule):
     return torch.sum(dist_rep_to_rule)

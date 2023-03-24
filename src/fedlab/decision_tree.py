@@ -325,3 +325,38 @@ def is_rule_sat(rule, activation_vector):
     return False
   else:
     return True
+  
+def dist_to_rule(rule, activation_vector):
+  # Calculates distance of the activation vector from the given rule. Rule is a triple of the form (class, neuron_ids, neuron_sig)
+  oper = -1
+  activation_vector = (activation_vector).flatten()
+  sum_dist = 0.0
+  num_violated = 0
+   
+  found = True
+  for ind in range(0,len(rule[1])):
+    if (ind % 2 == 0):
+      op = rule[2][ind]
+      if (op == '<='):
+        oper = 0
+      else:
+        oper = 1
+    else:
+      v = rule[1][ind]
+      vsig = rule[2][ind]
+      val = activation_vector[v]
+      #print(oper, v, vsig, val)
+      if (oper == 0):
+        if (val > vsig):
+          num_violated += 1
+          sum_dist += val - vsig
+      else:
+        if (val <= vsig):
+          num_violated += 1
+          sum_dist += vsig - val
+      oper = -1
+
+  if (num_violated == 0):
+    return 0.0
+  else:
+    return sum_dist/num_violated
