@@ -57,7 +57,6 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
         for _ in range(self.epochs):
             idx_strt = 0
             for data, target in train_loader:
-                idx_strt = rounds*batch_size
                 if self.cuda:
                     data = data.cuda(self.device)
                     target = target.cuda(self.device)
@@ -97,6 +96,7 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
                     self.optimizer.step()
 
                 rounds += 1
+                idx_strt += batch_size
                         
 
         return [self.model_parameters]

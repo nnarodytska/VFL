@@ -74,9 +74,12 @@ def map_inputs_to_rules(model, rules, data_loader):
 
 def calculate_dist_to_rule(input_to_rule_map, latent_vectors, rules):
     dists = []
-    for idx,latent_vector in latent_vectors:
-        rule = rules[input_to_rule_map[idx]]
-        dists.append(dist_to_rule(rule, latent_vector))
+    for idx,latent_vector in enumerate(latent_vectors):
+        if input_to_rule_map[idx] == -1:
+            dists.append(0.0)
+        else:
+            rule = rules[input_to_rule_map[idx]]
+            dists.append(dist_to_rule(rule, latent_vector))
     return torch.tensor(dists)
 
 
@@ -93,7 +96,7 @@ def evaluate_rules(model, rules, data_loader):
         for latent_vector in latent_vectors:
             for idx_rule, rule in enumerate(rules):
                 if is_rule_sat(rule, latent_vector):
-                    rule_sat_cnt[idx_rule] += rule_sat_cnt[idx_rule] + 1
+                    rule_sat_cnt[idx_rule] += 1
                     break
     
     return rule_sat_cnt

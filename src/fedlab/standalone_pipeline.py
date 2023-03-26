@@ -56,8 +56,7 @@ class EvalPipeline(StandalonePipeline):
             print(f"before personalization: client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
             if rules != None:
                 rule_sat_cnt = evaluate_rules(self.handler.model, rules, data_loader)
-                print(f'before personalization: client {client}: % of inputs satisfying \
-                      rules {rule_sat_cnt/len(data_loader.dataset)}')
+                print(f'before personalization: client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]}')
 
         self.trainer.personalization = True
         self.trainer.personalization_rounds = nb_rounds
@@ -72,8 +71,7 @@ class EvalPipeline(StandalonePipeline):
             print(f"after personalization: client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
             if rules != None:
                 rule_sat_cnt = evaluate_rules(self.handler.model, rules, data_loader)
-                print(f'after personalization: client {client}: % of inputs satisfying \
-                      rules {rule_sat_cnt/len(data_loader.dataset)}')               
+                print(f'after personalization: client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]}')               
             if save: self.save_model(save_path, model = self.trainer._model, name = f"client_{client}")
 
     def save_model(self, path, model, name ):
