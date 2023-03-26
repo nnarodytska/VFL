@@ -55,7 +55,10 @@ def map_inputs_to_rules(model, rules, data_loader):
         an input to rule map
     """
     input_to_rule_map = []
+    gpu = next(model.parameters()).device
     for data, target in data_loader:
+        data = data.to(gpu)
+        target = target.to(gpu)        
         latent_vectors = model.input_to_representation(data)
         for latent_vector in latent_vectors:
             matching_rule = False
@@ -82,7 +85,10 @@ def calculate_similarity_loss(dist_rep_to_rule):
 
 def evaluate_rules(model, rules, data_loader):
     rule_sat_cnt = [0] * len(rules)
+    gpu = next(model.parameters()).device
     for data, target in data_loader:
+        data = data.to(gpu)
+        target = target.to(gpu)
         latent_vectors = model.input_to_representation(data)
         for latent_vector in latent_vectors:
             for idx_rule, rule in enumerate(rules):
