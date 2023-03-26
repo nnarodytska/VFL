@@ -70,7 +70,7 @@ class EvalPipeline(StandalonePipeline):
             loss, acc = evaluate(self.trainer._model, nn.CrossEntropyLoss(), data_loader)
             print(f"after personalization: client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
             loss_g, acc_g = evaluate(self.handler.model, nn.CrossEntropyLoss(), self.test_loader)
-            print(f"after personalization: client {client}: "+ "global loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
+            print(f"after personalization: client {client}: "+ "global loss {:.4f}, test accuracy {:.4f}".format(loss_g, acc_g))
             if rules != None:
                 rule_sat_cnt = evaluate_rules(self.handler.model, rules, data_loader)
                 print(f'after personalization: client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]}')               
