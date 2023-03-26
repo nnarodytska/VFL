@@ -79,3 +79,15 @@ def calculate_dist_to_rule(input_to_rule_map, latent_vectors, rules):
 
 def calculate_similarity_loss(dist_rep_to_rule):
     return torch.sum(dist_rep_to_rule)
+
+def evaluate_rules(model, rules, data_loader):
+    rule_sat_cnt = [0] * len(rules)
+    for data, target in data_loader:
+        latent_vectors = model.input_to_representation(data)
+        for latent_vector in latent_vectors:
+            for idx_rule, rule in enumerate(rules):
+                if is_rule_sat(rule, latent_vector):
+                    rule_sat_cnt[idx_rule] += rule_sat_cnt[idx_rule] + 1
+                    break
+    
+    return rule_sat_cnt

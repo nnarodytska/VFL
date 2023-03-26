@@ -74,13 +74,16 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
                         output = self.model(data)
                         loss_base = self.criterion(output, target)
 
-                        # calculate "distance" of internal representation from rules and corresponding loss
-                        latent_vectors = self.model.input_to_representation(data)
+                        if self.rules == None:
+                            loss = loss_base + self.sim_weight * loss_sim
+                        else:
+                            # calculate "distance" of internal representation from rules and corresponding loss
+                            latent_vectors = self.model.input_to_representation(data)
 
-                        dist_rep_to_rule = calculate_dist_to_rule(input_to_rule_map[idx_strt:idx_strt+batch_size], latent_vectors, self.rules)
-                        loss_sim = calculate_similarity_loss(dist_rep_to_rule)
+                            dist_rep_to_rule = calculate_dist_to_rule(input_to_rule_map[idx_strt:idx_strt+batch_size], latent_vectors, self.rules)
+                            loss_sim = calculate_similarity_loss(dist_rep_to_rule)
 
-                        loss = loss_base + self.sim_weight * loss_sim
+                            loss = loss_base + self.sim_weight * loss_sim
                         self.optimizer.zero_grad()
                         loss.backward()
                         self.optimizer.step()

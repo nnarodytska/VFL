@@ -3,6 +3,7 @@ from fedlab.utils.functional import evaluate
 from fedlab.core.standalone import StandalonePipeline
 import torch
 from torch import nn
+from utils import evaluate_rules
 
 class EvalPipeline(StandalonePipeline):
     def __init__(self, handler, trainer, test_loader):
@@ -30,9 +31,10 @@ class EvalPipeline(StandalonePipeline):
                 loss, acc = evaluate(self.handler.model, nn.CrossEntropyLoss(), data_loader)
                 print(f"client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
 
-    def personalize(self, nb_rounds, save_path, per_lr, save= True):
+    def personalize(self, nb_rounds, save_path, per_lr, rules=None, save= True):
 
         self.trainer.setup_lr(per_lr/10)
+        self.trainer.setup_rules(rules)
 
         # server side
         clients = list(range(self.handler.num_clients))
@@ -52,7 +54,10 @@ class EvalPipeline(StandalonePipeline):
             data_loader = self.trainer.dataset.get_dataloader(client, self.trainer.batch_size)
             loss, acc = evaluate(self.handler.model, nn.CrossEntropyLoss(), data_loader)
             print(f"before personalization: client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
-
+            if rules != None:
+                rule_sat_cnt = evaluate_rules(self.handler.model, rules, data_loader)
+                print(f'before personalization: client {client}: % of inputs satisfying \
+                      rules {rule_sat_cnt/len(data_loader.dataset)}')
 
         self.trainer.personalization = True
         self.trainer.personalization_rounds = nb_rounds
@@ -65,6 +70,10 @@ class EvalPipeline(StandalonePipeline):
             data_loader = self.trainer.dataset.get_dataloader(client, self.trainer.batch_size)
             loss, acc = evaluate(self.trainer._model, nn.CrossEntropyLoss(), data_loader)
             print(f"after personalization: client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
+            if rules != None:
+                rule_sat_cnt = evaluate_rules(self.handler.model, rules, data_loader)
+                print(f'after personalization: client {client}: % of inputs satisfying \
+                      rules {rule_sat_cnt/len(data_loader.dataset)}')               
             if save: self.save_model(save_path, model = self.trainer._model, name = f"client_{client}")
 
     def save_model(self, path, model, name ):
