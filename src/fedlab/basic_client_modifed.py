@@ -74,7 +74,7 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
                         loss_base = self.criterion(output, target)
 
                         if self.rules == None:
-                            loss = loss_base + self.sim_weight * loss_sim
+                            loss = loss_base
                         else:
                             # calculate "distance" of internal representation from rules and corresponding loss
                             latent_vectors = self.model.input_to_representation(data)
