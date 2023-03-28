@@ -51,7 +51,8 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
         #print(self.optimizer)
 
         # map from data points to rules they satisfy
-        input_to_rule_map = map_inputs_to_rules(self.model, self.rules, train_loader)
+        if not (self.rules is None):
+            input_to_rule_map = map_inputs_to_rules(self.model, self.rules, train_loader)
 
         batch_size = train_loader.batch_size
         for _ in range(self.epochs):

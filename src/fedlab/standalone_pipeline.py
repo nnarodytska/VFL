@@ -59,7 +59,7 @@ class EvalPipeline(StandalonePipeline):
                 print(f'before personalization: client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]}')
 
         self.trainer.personalization = True
-        self.trainer.personalization_rounds = nb_rounds
+        self.trainer.personalization_rounds = nb_rounds*2
         self.trainer.local_process(broadcast, clients)
         uploads = self.trainer.uplink_package
 

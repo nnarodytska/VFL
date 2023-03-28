@@ -66,4 +66,4 @@ test_loader = DataLoader(test_data, batch_size=1024)
 standalone_eval = EvalPipeline(handler=handler, trainer=trainer, test_loader=test_loader)
 standalone_eval.main()
 standalone_eval.personalize(nb_rounds=args.personalization_steps, save_path= args.models_path, 
-                            per_lr = args.personalization_lr, save = False)
+                            per_lr = args.personalization_lr, save = True)
