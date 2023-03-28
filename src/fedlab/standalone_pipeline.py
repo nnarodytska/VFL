@@ -11,6 +11,7 @@ class EvalPipeline(StandalonePipeline):
         self.test_loader = test_loader 
     
     def main(self):
+        nb_round = 0
         while self.handler.if_stop is False:
             # server side
             sampled_clients = self.handler.sample_clients()
@@ -25,11 +26,12 @@ class EvalPipeline(StandalonePipeline):
                 self.handler.load(pack)
 
             loss, acc = evaluate(self.handler.model, nn.CrossEntropyLoss(), self.test_loader)
-            print("loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
+            nb_round += 1
+            print("nb rounds {}: loss {:.4f}, test accuracy {:.4f}".format(nb_round, loss, acc))
             for client in sampled_clients:
                 data_loader = self.trainer.dataset.get_dataloader(client, self.trainer.batch_size)
                 loss, acc = evaluate(self.handler.model, nn.CrossEntropyLoss(), data_loader)
-                print(f"client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
+                print(f"nb rounds {nb_round}: client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
 
     def personalize(self, nb_rounds, save_path, per_lr, rules=None, save= True):
 
