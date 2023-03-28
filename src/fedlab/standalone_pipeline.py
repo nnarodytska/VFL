@@ -42,24 +42,28 @@ class EvalPipeline(StandalonePipeline):
         #print(save_path)
         if save: self.save_model(save_path, model = self.handler._model, name ="global")
         
-        loss, acc = evaluate(self.handler.model, nn.CrossEntropyLoss(), self.test_loader)
-        print("before personalization: global loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
+        loss, global_acc = evaluate(self.handler.model, nn.CrossEntropyLoss(), self.test_loader)
+        print("before personalization: global loss {:.4f}, test accuracy {:.4f}".format(loss, global_acc))
         
         # for p_, p in zip(self.handler._model.parameters(), self.handler.model.parameters()):
         #     print(p_, p)
         # exit()
 
         #client side
+        global_model_data_per_client = {}
         for id, client in enumerate(clients):
             data_loader = self.trainer.dataset.get_dataloader(client, self.trainer.batch_size)
             loss, acc = evaluate(self.handler.model, nn.CrossEntropyLoss(), data_loader)
             print(f"before personalization: client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
+            global_model_data_per_client[client] = {}
+            global_model_data_per_client[client]["accuracy"] = acc
+            
             if rules != None:
                 rule_sat_cnt = evaluate_rules(self.handler.model, rules, data_loader)
                 print(f'before personalization: client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]}')
-
+                global_model_data_per_client[client]["rules"] = [float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]
         self.trainer.personalization = True
-        self.trainer.personalization_rounds = nb_rounds*2
+        self.trainer.personalization_rounds = nb_rounds
         self.trainer.local_process(broadcast, clients)
         uploads = self.trainer.uplink_package
 
@@ -68,12 +72,13 @@ class EvalPipeline(StandalonePipeline):
             self.trainer.set_model(model_parameters)
             data_loader = self.trainer.dataset.get_dataloader(client, self.trainer.batch_size)
             loss, acc = evaluate(self.trainer._model, nn.CrossEntropyLoss(), data_loader)
-            print(f"after personalization: client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
+            print(f"after personalization (# rounds {self.trainer.personalization_rounds}): client {client}: "+ "loss {:.4f}, test accuracy {:.4f} (from {:.4f})".format(loss, acc, global_model_data_per_client[client]["accuracy"]))
             loss_g, acc_g = evaluate(self.trainer._model, nn.CrossEntropyLoss(), self.test_loader)
-            print(f"after personalization: client {client}: "+ "global loss {:.4f}, test accuracy {:.4f}".format(loss_g, acc_g))
+            print(f"after personalization: client {client}: "+ "global loss {:.4f}, test accuracy {:.4f} (from {:.4f})".format(loss_g, acc_g, global_acc))
+            
             if rules != None:
                 rule_sat_cnt = evaluate_rules(self.trainer._model, rules, data_loader)
-                print(f'after personalization: client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]}')               
+                print(f'after personalization(# rounds {self.trainer.personalization_rounds}): client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]} (from {global_model_data_per_client[client]["rules"] })')               
             if save: self.save_model(save_path, model = self.trainer._model, name = f"client_{client}")
 
     def save_model(self, path, model, name ):
