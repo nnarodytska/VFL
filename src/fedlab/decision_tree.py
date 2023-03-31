@@ -331,8 +331,8 @@ def dist_to_rule(rule, activation_vector):
   # Calculates distance of the activation vector from the given rule. Rule is a triple of the form (class, neuron_ids, neuron_sig)
   oper = -1
   activation_vector = (activation_vector).flatten()
-  sum_dist = torch.tensor(0.0)
-  num_violated = torch.tensor(0)
+  sum_dist = torch.tensor(0.0, device=activation_vector.device)
+  num_violated = torch.tensor(0, device=activation_vector.device)
    
   found = True
   for ind in range(0,len(rule[1])):
@@ -358,6 +358,6 @@ def dist_to_rule(rule, activation_vector):
       oper = -1
 
   if (num_violated == 0):
-    return torch.tensor(0.0)
+    return torch.tensor(0.0, device=activation_vector.device)
   else:
     return sum_dist/num_violated

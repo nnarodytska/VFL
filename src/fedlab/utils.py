@@ -76,7 +76,7 @@ def calculate_dist_to_rule(input_to_rule_map, latent_vectors, rules):
     dists = []
     for idx,latent_vector in enumerate(latent_vectors):
         if input_to_rule_map[idx] == -1:
-            dists.append(torch.tensor(0.0))
+            dists.append(torch.tensor(0.0, device=latent_vector.device))
         else:
             rule = rules[input_to_rule_map[idx]]
             dists.append(dist_to_rule(rule, latent_vector))
