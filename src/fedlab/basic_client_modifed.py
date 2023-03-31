@@ -32,6 +32,14 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
         """
         self.rules = rules
 
+    def setup_sim_weight(self, weight):
+        """Set up sim_weight.
+
+        Args:
+            weight (float): sim_weight.
+        """
+        self.sim_weight = weight
+
     def train(self, model_parameters, train_loader):
         """Single round of local training for one client.
 

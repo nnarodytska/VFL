@@ -22,6 +22,7 @@ def setup_args():
     parser.add_argument("--personalization_steps_replay", type=int, default = None)
 
     parser.add_argument("--personalization_lr", type=int, default = None)
+    parser.add_argument("--personalization_sim_weight", type=float, default = 1.0)
 
 
 
