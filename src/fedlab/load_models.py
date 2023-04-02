@@ -123,5 +123,5 @@ rules.append((True, invariants[True][0][0], invariants[True][0][1]))
 rules.append((False, invariants[False][0][0], invariants[False][0][1]))
 
 standalone_eval.personalize(nb_rounds=args.personalization_steps_replay, save_path= args.models_path, 
-                            per_lr = args.personalization_lr, rules=rules, save = False)
+                            per_lr = args.personalization_lr, rules=rules, sim_weight=args.personalization_sim_weight, save = False)
 
