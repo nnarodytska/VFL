@@ -70,7 +70,7 @@ class PartitionedMNIST(FedDataset):
                  skip_regen = False,
                  transform=None,
                  target_transform=None,
-                 augment_percent = 0.01) -> None:
+                 augment_percent = 0) -> None:
 
         self.root = os.path.expanduser(root)
         self.path = path
@@ -162,25 +162,28 @@ class PartitionedMNIST(FedDataset):
                                             major_classes_num = major_classes_num,
                                             seed=seed)
 
-            for cid in range(self.num_clients):
-                extra_client_dict = {}
-                extra_client_dict[cid] = []
-            indices =  np.random.permutation(np.arange(len(dataset.targets)))
-            # sort sample indices according to labels
-            indices_targets = np.vstack((indices, dataset.targets))
-            indices_targets = indices_targets[:, indices_targets[1, :].argsort()]
-            # corresponding labels after sorting are [0, .., 0, 1, ..., 1, ...]
-            sorted_indices = indices_targets[0, :]
-         
-            for cid in range(self.num_clients):
-                augment_nb_instances = max(ceil(self.augment_percent*len(partitioner.client_dict[cid])), 5)
 
+            if (self.augment_percent > 0):
 
-                for classid in range(self.number_classes):
-                    extra_client_dict[cid] = (np.random.permutation(indices_targets[0,indices_targets[1,:] ==classid]))[:augment_nb_instances]
-                    partitioner.client_dict[cid] = np.unique(np.hstack((partitioner.client_dict[cid] , extra_client_dict[cid])))
-            #         exit()
+                for cid in range(self.num_clients):
+                    extra_client_dict = {}
+                    extra_client_dict[cid] = []
+                indices =  np.random.permutation(np.arange(len(dataset.targets)))
+                # sort sample indices according to labels
+                indices_targets = np.vstack((indices, dataset.targets))
+                indices_targets = indices_targets[:, indices_targets[1, :].argsort()]
+                # corresponding labels after sorting are [0, .., 0, 1, ..., 1, ...]
+                sorted_indices = indices_targets[0, :]
             
+                for cid in range(self.num_clients):
+                    augment_nb_instances = max(ceil(self.augment_percent*len(partitioner.client_dict[cid])), 5)
+
+
+                    for classid in range(self.number_classes):
+                        extra_client_dict[cid] = (np.random.permutation(indices_targets[0,indices_targets[1,:] ==classid]))[:augment_nb_instances]
+                        partitioner.client_dict[cid] = np.unique(np.hstack((partitioner.client_dict[cid] , extra_client_dict[cid])))
+                #         exit()
+                
 
             # print(indices_targets)
             # exit()
