@@ -20,7 +20,7 @@ from partitioned_mnist import PartitionedMNIST
 from standalone_setup import setup_args
 from basic_client_modifed import SGDSerialClientTrainerExt
 from decision_tree import get_invariant, validate
-from utils import generate_concept_dataset
+from utils import generate_concept_dataset, subsample_trainset
 
 
 from fedlab.contrib.algorithm.basic_server import SyncServerHandler
@@ -58,6 +58,10 @@ dataset = PartitionedMNIST( root= args.root_path,
                             skip_regen = True,
                             transform=transforms.Compose(
                              [transforms.ToPILImage(), transforms.ToTensor()]))
+
+
+################ sample train set #########################
+subsample_dataloader = subsample_trainset(dataset, fraction = 0.1)
 
 trainer.setup_dataset(dataset)
 trainer.setup_optim(args.epochs, args.batch_size, args.lr)

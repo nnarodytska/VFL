@@ -1,3 +1,4 @@
+import random
 import torch
 import numpy as np
 from torchvision.datasets import MNIST
@@ -8,6 +9,20 @@ from typing import List, Tuple, Dict
 from pathlib import Path
 
 from decision_tree import is_rule_sat, dist_to_rule
+
+def subsample_trainset (dataset, fraction = 0.1):
+
+    subsets = []
+    for cid in range(dataset.num_clients):
+        data4cid = dataset.get_dataloader(cid)
+        data4cid.shuffle = True
+        nb_samples = len(data4cid.dataset)
+        nb_sub_samples = int(nb_samples*fraction)
+        subset = random.sample(range(nb_samples), nb_sub_samples)
+        subsets.append(torch.utils.data.Subset(data4cid,subset))
+    subsample_train = DataLoader(torch.utils.data.ConcatDataset(subsets))
+    print(f"Generated subsampled dataset with fraction {fraction} is of length: {len(subsample_train.dataset)}")
+    return subsample_train
 
 def generate_concept_dataset(dataset: Dataset, concept_classes: List[int], subset_size: int,
                                    random_seed: int) -> Tuple:

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from math import ceil
 import os
 
 import torch
@@ -19,6 +20,7 @@ from torch.utils.data import DataLoader
 import torchvision
 from torchvision import transforms
 from matplotlib import pyplot as plt
+import numpy as np
 
 import pandas as pd
 # from .basic_dataset import FedDataset, Subset
@@ -27,6 +29,14 @@ import pandas as pd
 from fedlab.contrib.dataset.basic_dataset import FedDataset, BaseDataset, Subset
 from fedlab.utils.dataset.partition import MNISTPartitioner
 from fedlab.utils.functional import partition_report
+
+
+class MNISTPartitionerExt(MNISTPartitioner):
+    """Data partitioner for MNIST.
+
+    For details, please check :class:`VisionPartitioner`  and `Federated Dataset and DataPartitioner <FMNISTPartitioner>`_.
+    """
+    num_features = 784
 
 class PartitionedMNIST(FedDataset):
     """:class:`FedDataset` with partitioning preprocess. For detailed partitioning, please
@@ -59,7 +69,8 @@ class PartitionedMNIST(FedDataset):
                  seed=None,
                  skip_regen = False,
                  transform=None,
-                 target_transform=None) -> None:
+                 target_transform=None,
+                 augment_percent = 0) -> None:
 
         self.root = os.path.expanduser(root)
         self.path = path
@@ -67,6 +78,7 @@ class PartitionedMNIST(FedDataset):
         self.transform = transform
         self.targt_transform = target_transform
         self.number_classes = 10
+        self.augment_percent = augment_percent
 
 
         if preprocess:
@@ -142,7 +154,7 @@ class PartitionedMNIST(FedDataset):
             dataset = torchvision.datasets.MNIST(root=self.root,
                                                     train=is_train,
                                                     download=download)
-            partitioner = MNISTPartitioner(dataset.targets,
+            partitioner = MNISTPartitionerExt(dataset.targets,
                                             num_clients=self.num_clients,
                                             partition=partition,
                                             dir_alpha=dir_alpha,
@@ -150,6 +162,31 @@ class PartitionedMNIST(FedDataset):
                                             major_classes_num = major_classes_num,
                                             seed=seed)
 
+
+            if (self.augment_percent > 0):
+
+                for cid in range(self.num_clients):
+                    extra_client_dict = {}
+                    extra_client_dict[cid] = []
+                indices =  np.random.permutation(np.arange(len(dataset.targets)))
+                # sort sample indices according to labels
+                indices_targets = np.vstack((indices, dataset.targets))
+                indices_targets = indices_targets[:, indices_targets[1, :].argsort()]
+                # corresponding labels after sorting are [0, .., 0, 1, ..., 1, ...]
+                sorted_indices = indices_targets[0, :]
+            
+                for cid in range(self.num_clients):
+                    augment_nb_instances = max(ceil(self.augment_percent*len(partitioner.client_dict[cid])), 5)
+
+
+                    for classid in range(self.number_classes):
+                        extra_client_dict[cid] = (np.random.permutation(indices_targets[0,indices_targets[1,:] ==classid]))[:augment_nb_instances]
+                        partitioner.client_dict[cid] = np.unique(np.hstack((partitioner.client_dict[cid] , extra_client_dict[cid])))
+                #         exit()
+                
+
+            # print(indices_targets)
+            # exit()
 
 
             stats(dataset, type_data, partitioner)
@@ -161,6 +198,8 @@ class PartitionedMNIST(FedDataset):
                             target_transform=target_transform)
                 for cid in range(self.num_clients)
             }
+
+
             for cid in subsets:
                 torch.save(
                     subsets[cid],
