@@ -51,6 +51,7 @@ dataset = PartitionedMNIST( root= args.root_path,
                             download=True,                           
                             verbose=True,
                             skip_regen = True,
+                            augment_percent=args.augement_data_percent_per_class,
                             transform=transforms.Compose(
                              [transforms.ToPILImage(), transforms.ToTensor()]))
 
