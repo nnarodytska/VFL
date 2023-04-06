@@ -28,7 +28,7 @@ python3 load_models.py  --total_client 10 --com_round 50 --sample_ratio 0.9 --ba
 
 ```
 
-Teh latest one:
+The latest model (04/05/2023):
 
 
 ```
