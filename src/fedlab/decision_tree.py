@@ -334,8 +334,12 @@ def dist_to_rule(rule, activation_vector):
   sum_dist = torch.tensor(0.0, device=activation_vector.device)
   num_violated = torch.tensor(0, device=activation_vector.device)
    
-  found = True
-  for ind in range(0,len(rule[1])):
+  neurons = []
+  for indx in range(0,len(rule[1])):
+      neurons.append(-1)
+      neurons.append(rule[1][indx])
+
+  for ind in range(0,len(neurons)):
     if (ind % 2 == 0):
       op = rule[2][ind]
       if (op == '<='):
@@ -343,7 +347,7 @@ def dist_to_rule(rule, activation_vector):
       else:
         oper = 1
     else:
-      v = rule[1][ind]
+      v = neurons[ind]
       vsig = rule[2][ind]
       val = activation_vector[v]
       #print(oper, v, vsig, val)
