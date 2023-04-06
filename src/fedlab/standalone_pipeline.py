@@ -90,6 +90,7 @@ class EvalPipeline(StandalonePipeline):
         torch.save(model, path+ f'/{name}.pt')
 
     def load_global_model(self, path):
+        #print(path)
         assert(os.path.exists(path))
         self.handler._model = torch.load(path+'/global.pt').cuda()
 
