@@ -62,6 +62,7 @@ dataset = PartitionedMNIST( root= args.root_path,
 
 ################ sample train set #########################
 subsample_dataloader = subsample_trainset(dataset, fraction = 0.1)
+#########################
 
 trainer.setup_dataset(dataset)
 trainer.setup_optim(args.epochs, args.batch_size, args.lr)
