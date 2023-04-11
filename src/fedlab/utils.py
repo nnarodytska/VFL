@@ -7,9 +7,20 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.data import DataLoader, Dataset, BatchSampler
 from typing import List, Tuple, Dict
 from pathlib import Path
+from mlp import MLP, SmallMLP, TinyMLP
 
 from decision_tree import is_rule_sat, dist_to_rule
 
+def get_model(args):
+    if args.model == "mlp":
+        return MLP(784, 10).cuda()
+
+    if args.model == "smallmlp":
+        return SmallMLP(784, 10).cuda()
+
+    if args.model == "tinymlp":
+        return TinyMLP(784, 10).cuda()
+    
 def subsample_trainset (dataset, fraction = 0.1):
 
     subsets = []

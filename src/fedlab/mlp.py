@@ -49,16 +49,45 @@ class MLP(nn.Module):
 
 class SmallMLP(nn.Module):
     def __init__(self, input_size, output_size):
-        super(MLP, self).__init__()
-        self.fc1 = nn.Linear(input_size, 20)
-        self.fc2 = nn.Linear(20, 20)
-        self.fc3 = nn.Linear(20, output_size)
+        super(SmallMLP, self).__init__()
+        self.fc1 = nn.Linear(input_size, 50)
+        self.fc2 = nn.Linear(50, 20)
+        self.fc3 = nn.Linear(20, 20)
+        self.fc4 = nn.Linear(20, output_size)
         self.relu = nn.ReLU()
+
+    def input_to_representation(self, x):
+        x = x.view(x.shape[0], -1)
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        return x
 
     def forward(self, x):
         x = x.view(x.shape[0], -1)
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = self.relu(self.fc3(x))
+        x = self.fc4(x)
         return x
 
+class TinyMLP(nn.Module):
+    def __init__(self, input_size, output_size):
+        super(TinyMLP, self).__init__()
+        self.fc1 = nn.Linear(input_size, 20)
+        self.fc2 = nn.Linear(20, 20)
+        self.fc3 = nn.Linear(20, 20)
+        self.fc4 = nn.Linear(20, output_size)
+        self.relu = nn.ReLU()
+    def input_to_representation(self, x):
+        x = x.view(x.shape[0], -1)
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        return x
+
+    def forward(self, x):
+        x = x.view(x.shape[0], -1)
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.relu(self.fc3(x))
+        x = self.fc4(x)
+        return x

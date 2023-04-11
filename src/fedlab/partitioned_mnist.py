@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 from math import ceil
 import os
 
@@ -70,6 +71,7 @@ class PartitionedMNIST(FedDataset):
                  skip_regen = False,
                  transform=None,
                  target_transform=None,
+                 augment_zeros = 0,
                  augment_percent = 0) -> None:
 
         self.root = os.path.expanduser(root)
@@ -79,6 +81,7 @@ class PartitionedMNIST(FedDataset):
         self.targt_transform = target_transform
         self.number_classes = 10
         self.augment_percent = augment_percent
+        self.augment_zeros = augment_zeros
 
 
         if preprocess:
@@ -168,21 +171,38 @@ class PartitionedMNIST(FedDataset):
                 for cid in range(self.num_clients):
                     extra_client_dict = {}
                     extra_client_dict[cid] = []
-                indices =  np.random.permutation(np.arange(len(dataset.targets)))
+                indices =  np.arange(len(dataset.targets))
                 # sort sample indices according to labels
                 indices_targets = np.vstack((indices, dataset.targets))
                 indices_targets = indices_targets[:, indices_targets[1, :].argsort()]
                 # corresponding labels after sorting are [0, .., 0, 1, ..., 1, ...]
-                sorted_indices = indices_targets[0, :]
+                #sorted_indices = indices_targets[0, :]
+                #print(indices_targets)
             
                 for cid in range(self.num_clients):
                     augment_nb_instances = max(ceil(self.augment_percent*len(partitioner.client_dict[cid])), 5)
-
+                    #print(augment_nb_instances)
+                    augment_zeros = copy.deepcopy(self.augment_zeros)
+                    if not is_train:
+                        augment_zeros = int(augment_zeros/10)              
 
                     for classid in range(self.number_classes):
-                        extra_client_dict[cid] = (np.random.permutation(indices_targets[0,indices_targets[1,:] ==classid]))[:augment_nb_instances]
+
+                        if classid == 0 and augment_zeros > 0 and augment_zeros > augment_nb_instances: 
+                            extra_client_dict[cid] = (np.random.permutation(indices_targets[0,indices_targets[1,:] ==classid]))[:augment_zeros]
+                            #print(indices_targets[0,indices_targets[1,:] ==classid])
+                            #exit()
+                        else:
+                            extra_client_dict[cid] = (np.random.permutation(indices_targets[0,indices_targets[1,:] ==classid]))[:augment_nb_instances]
+                        #print(len(extra_client_dict[cid]), cid, classid)
                         partitioner.client_dict[cid] = np.unique(np.hstack((partitioner.client_dict[cid] , extra_client_dict[cid])))
-                #         exit()
+                    # addign zeros
+                
+      
+
+                    #print(is_train, augment_zeros)
+
+
                 
 
             # print(indices_targets)

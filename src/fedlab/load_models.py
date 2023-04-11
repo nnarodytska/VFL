@@ -20,7 +20,7 @@ from partitioned_mnist import PartitionedMNIST
 from standalone_setup import setup_args
 from basic_client_modifed import SGDSerialClientTrainerExt
 from decision_tree import get_invariant, validate
-from utils import generate_concept_dataset, subsample_trainset
+from utils import generate_concept_dataset, get_model, subsample_trainset
 
 
 from fedlab.contrib.algorithm.basic_server import SyncServerHandler
@@ -28,7 +28,8 @@ from fedlab.utils.functional import evaluate
 from torch import nn
 
 args = setup_args()
-model =MLP(784, 10).cuda()
+model = get_model(args)
+
 
 # server
 handler = SyncServerHandler(model = model, 

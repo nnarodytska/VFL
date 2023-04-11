@@ -50,6 +50,8 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
             model_parameters (torch.Tensor): serialized model parameters.
             train_loader (torch.utils.data.DataLoader): :class:`torch.utils.data.DataLoader` for this client.
         """
+        # print(self._model)
+        # print(model_parameters.shape)
         self.set_model(model_parameters)
         self._model.train()
 

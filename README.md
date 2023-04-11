@@ -43,3 +43,11 @@ python3 load_models.py  --total_client 10 --com_round 15 --sample_ratio 0.9 --ba
 python3 load_models.py  --total_client 10 --com_round 25 --sample_ratio 0.9 --batch_size 256 --epochs 5 --lr 0.1 --major_classes_num 1 --personalization_steps 25 --personalization_steps_replay 50 --personalization_sim_weight 0.005 --augement_data_percent_per_class  0.01
 
 ```
+
+The latest model (04/10/2023):
+
+```
+python3 load_models.py  --personalization_steps_replay 50 --personalization_sim_weight 0.005   --total_client 10 --com_round 25 --sample_ratio 0.9 --batch_size 256 --epochs 5 --lr 0.1 --major_classes_num 1 --personalization_steps 25 --augement_data_percent_per_class  0.005 --model tinymlp --augement_data_with_zeros 250;
+
+python3 load_models.py  --personalization_steps_replay 50 --personalization_sim_weight 0.005 --total_client 10 --com_round 25 --sample_ratio 0.9 --batch_size 256 --epochs 5 --lr 0.1 --major_classes_num 1 --personalization_steps 25 --augement_data_percent_per_class  0.005 --model smallmlp --augement_data_with_zeros 250;
+```

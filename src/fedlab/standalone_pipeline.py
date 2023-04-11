@@ -108,6 +108,7 @@ class EvalPipeline(StandalonePipeline):
         clients = list(range(self.handler.num_clients))
         for id, client in enumerate(clients):
             self.trainer._model = torch.load(path+f"/client_{client}.pt").cuda()
+            print(self.trainer._model)
             data_loader = self.trainer.dataset.get_dataloader(client, self.trainer.batch_size)
             loss, acc = evaluate(self.trainer._model, nn.CrossEntropyLoss(), data_loader)
             print(f"load personalization: client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))

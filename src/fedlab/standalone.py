@@ -2,6 +2,7 @@ from json import load
 import os
 import random
 from copy import deepcopy
+from fedlab.utils import get_model
 
 import torchvision
 import torchvision.transforms as transforms
@@ -13,7 +14,6 @@ sys.path.append("../../")
 torch.manual_seed(0)
 
 
-from mlp import MLP
 from standalone_pipeline import EvalPipeline
 from partitioned_mnist import PartitionedMNIST
 from standalone_setup import setup_args
@@ -23,7 +23,8 @@ from fedlab.contrib.algorithm.basic_server import SyncServerHandler
 
 
 args = setup_args()
-model =MLP(784, 10).cuda()
+model = get_model(args)
+
 
 # server
 handler = SyncServerHandler(model = model, 
@@ -52,6 +53,7 @@ dataset = PartitionedMNIST( root= args.root_path,
                             verbose=True,
                             skip_regen = True,
                             augment_percent=args.augement_data_percent_per_class,
+                            augment_zeros = args.augement_data_with_zeros,
                             transform=transforms.Compose(
                              [transforms.ToPILImage(), transforms.ToTensor()]))
 
