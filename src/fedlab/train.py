@@ -16,7 +16,7 @@ torch.manual_seed(0)
 
 from standalone_pipeline import EvalPipeline
 from partitioned_mnist import PartitionedMNIST
-from standalone_setup import setup_args
+from setup import setup_args
 from basic_client_modifed import SGDSerialClientTrainerExt
 
 from fedlab.contrib.algorithm.basic_server import SyncServerHandler

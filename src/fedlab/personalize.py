@@ -17,7 +17,7 @@ torch.manual_seed(0)
 from mlp import MLP
 from standalone_pipeline import EvalPipeline
 from partitioned_mnist import PartitionedMNIST
-from standalone_setup import setup_args
+from setup import setup_args
 from basic_client_modifed import SGDSerialClientTrainerExt
 from decision_tree import get_invariant, validate
 from utils import generate_concept_dataset, get_model, subsample_trainset
