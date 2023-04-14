@@ -28,6 +28,7 @@ from fedlab.utils.functional import evaluate
 from torch import nn
 
 args = setup_args()
+print(vars(args))
 model = get_model(args)
 
 
@@ -62,7 +63,7 @@ dataset = PartitionedMNIST( root= args.root_path,
 
 
 ################ sample train set #########################
-subsample_dataloader = subsample_trainset(dataset, fraction = 0.1)
+subsample_dataset = subsample_trainset(dataset, fraction = 0.1)
 #########################
 
 trainer.setup_dataset(dataset)
@@ -91,9 +92,9 @@ print("loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-train_data = torchvision.datasets.MNIST(root="../../datasets/mnist/",
-                                       train=True,
-                                       transform=transforms.ToTensor())
+# train_data = torchvision.datasets.MNIST(root="../../datasets/mnist/",
+#                                        train=True,
+#                                        transform=transforms.ToTensor())
 concept_to_class = {
     "Loop": [0, 2, 6, 8, 9],
     "Vertical Line": [1, 4, 7],
@@ -101,10 +102,10 @@ concept_to_class = {
     "Curvature": [0, 2, 3, 5, 6, 8, 9],
 }
 # Load concept sets
-X_train, C_train = generate_concept_dataset(train_data, concept_to_class["Curvature"],
+X_train, C_train = generate_concept_dataset(subsample_dataset, concept_to_class["Curvature"],
                                                subset_size=10000, 
                                                random_seed=42)
-X_test, C_test = generate_concept_dataset(train_data, concept_to_class["Curvature"],
+X_test, C_test = generate_concept_dataset(subsample_dataset, concept_to_class["Curvature"],
                                                subset_size=1000, 
                                                random_seed=42)
 

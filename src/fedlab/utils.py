@@ -7,8 +7,9 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.data import DataLoader, Dataset, BatchSampler
 from typing import List, Tuple, Dict
 from pathlib import Path
-from mlp import MLP, SmallMLP, TinyMLP
+from fedlab.utils.functional import AverageMeter
 
+from mlp import MLP, SmallMLP, TinyMLP
 from decision_tree import is_rule_sat, dist_to_rule
 
 def get_model(args):
@@ -31,8 +32,8 @@ def subsample_trainset (dataset, fraction = 0.1):
         nb_sub_samples = int(nb_samples*fraction)
         subset = random.sample(range(nb_samples), nb_sub_samples)
         subsets.append(torch.utils.data.Subset(data4cid,subset))
-    subsample_train = DataLoader(torch.utils.data.ConcatDataset(subsets))
-    print(f"Generated subsampled dataset with fraction {fraction} is of length: {len(subsample_train.dataset)}")
+    subsample_train = torch.utils.data.ConcatDataset(subsets)
+    print(f"Generated subsampled dataset with fraction {fraction} is of length: {len(subsample_train)}")
     return subsample_train
 
 def generate_concept_dataset(dataset: Dataset, concept_classes: List[int], subset_size: int,
@@ -62,7 +63,7 @@ def generate_concept_dataset(dataset: Dataset, concept_classes: List[int], subse
     positive_images, positive_labels = next(iter(positive_loader))
     negative_images, negative_labels = next(iter(negative_loader))
     X = np.concatenate((positive_images.cpu().numpy(), negative_images.cpu().numpy()), 0)
-    y = np.concatenate((np.ones(subset_size), np.zeros(subset_size)), 0)
+    y = np.concatenate((np.ones(len(positive_loader.dataset)), np.zeros(len(negative_loader.dataset))), 0)
     np.random.seed(random_seed)
     rand_perm = np.random.permutation(len(X))
     return X[rand_perm], y[rand_perm]
@@ -126,3 +127,31 @@ def evaluate_rules(model, rules, data_loader):
                     break
     
     return rule_sat_cnt
+
+def evaluate_label_specific(model, test_loader):
+    """Evaluate classify task model accuracy.
+    
+    Returns:
+        list of accuracies for each label
+    """
+    model.eval()
+    gpu = next(model.parameters()).device
+
+    last_layer = list(model.children())[-1]
+    correct = [0] * last_layer.fc3.out_features
+    total = [0] * last_layer.fc3.out_features
+
+    with torch.no_grad():
+        for inputs, labels in test_loader:
+            inputs = inputs.to(gpu)
+            labels = labels.to(gpu)
+
+            outputs = model(inputs)
+            _, predicted = torch.max(outputs, 1)
+            for i in range(len(labels)):
+                label = labels[i]
+                correct[label] += (predicted[i] == label).item()
+                total[label] += 1
+
+    accuracy = [correct[i] / total[i] for i in range(len(correct))]
+    return accuracy
