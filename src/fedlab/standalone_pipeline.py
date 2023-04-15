@@ -96,12 +96,12 @@ class EvalPipeline(StandalonePipeline):
                 client_stats_post_personalization[client]["rules"] = [float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]               
             if save: self.save_model(save_path, model = self.trainer._model, name = f"client_{client}")
             
-            print("Before personalization results:")
-            for id, client in enumerate(clients):
-                print(f'Client {client}: ', client_stats_pre_personalization[client])
-            print("After personalization results:")
-            for id, client in enumerate(clients):
-                print(f'Client {client}: ', client_stats_post_personalization[client])
+        print("Before personalization results:")
+        for id, client in enumerate(clients):
+            print(f'Client {client}: ', client_stats_pre_personalization[client])
+        print("After personalization results:")
+        for id, client in enumerate(clients):
+            print(f'Client {client}: ', client_stats_post_personalization[client])
 
 
     def save_model(self, path, model, name ):
