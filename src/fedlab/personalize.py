@@ -82,19 +82,20 @@ standalone_eval.load_global_model(path = args.models_path)
 ###############################################
 # we have global model here
 ###############################################
+print("Model architecture:")
 print(handler.model)
 # evalution of `global` trainign set
 loss, acc = evaluate(handler.model, nn.CrossEntropyLoss(), test_loader)
-print("loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
+print("Global model loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
 
 
 ## extracting rules
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-# train_data = torchvision.datasets.MNIST(root="../../datasets/mnist/",
-#                                        train=True,
-#                                        transform=transforms.ToTensor())
+test_data = torchvision.datasets.MNIST(root="../../datasets/mnist/",
+                                       train=False,
+                                       transform=transforms.ToTensor())
 concept_to_class = {
     "Loop": [0, 2, 6, 8, 9],
     "Vertical Line": [1, 4, 7],
@@ -105,7 +106,7 @@ concept_to_class = {
 X_train, C_train = generate_concept_dataset(subsample_dataset, concept_to_class["Curvature"],
                                                subset_size=10000, 
                                                random_seed=42)
-X_test, C_test = generate_concept_dataset(subsample_dataset, concept_to_class["Curvature"],
+X_test, C_test = generate_concept_dataset(test_data, concept_to_class["Curvature"],
                                                subset_size=1000, 
                                                random_seed=42)
 

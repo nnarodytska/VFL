@@ -175,7 +175,7 @@ def get_all_invariants_vals(estimator):
     paths += [[[feature[node]] + p[0],['>'] + [threshold[node]] + p[1], p[2], p[3]] for p in get_all_paths_rec(right_child(node))]
     return paths
   paths =  get_all_paths_rec(0)
-  print("Obtained all paths")
+  # print("Obtained all paths")
   invariants = {}
   for p in tqdm(paths):
     neuron_ids, neuron_sig, cl, nsamples = p

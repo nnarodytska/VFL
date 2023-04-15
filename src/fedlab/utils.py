@@ -31,7 +31,7 @@ def subsample_trainset (dataset, fraction = 0.1):
         nb_samples = len(data4cid.dataset)
         nb_sub_samples = int(nb_samples*fraction)
         subset = random.sample(range(nb_samples), nb_sub_samples)
-        subsets.append(torch.utils.data.Subset(data4cid,subset))
+        subsets.append(torch.utils.data.Subset(data4cid.dataset,subset))
     subsample_train = torch.utils.data.ConcatDataset(subsets)
     print(f"Generated subsampled dataset with fraction {fraction} is of length: {len(subsample_train)}")
     return subsample_train
@@ -49,7 +49,10 @@ def generate_concept_dataset(dataset: Dataset, concept_classes: List[int], subse
     Returns:
         a concept dataset of the form X (features),y (concept labels)
     """
-    targets = dataset.targets
+    dataloader = torch.utils.data.DataLoader(dataset)
+    targets = []
+    for _,target in dataloader:
+        targets.append(target[0].int())
     mask = torch.zeros(len(targets))
     for idx, target in enumerate(targets):  # Scan the dataset for valid examples
         if target in concept_classes:
@@ -63,7 +66,7 @@ def generate_concept_dataset(dataset: Dataset, concept_classes: List[int], subse
     positive_images, positive_labels = next(iter(positive_loader))
     negative_images, negative_labels = next(iter(negative_loader))
     X = np.concatenate((positive_images.cpu().numpy(), negative_images.cpu().numpy()), 0)
-    y = np.concatenate((np.ones(len(positive_loader.dataset)), np.zeros(len(negative_loader.dataset))), 0)
+    y = np.concatenate((np.ones(len(positive_images)), np.zeros(len(negative_images))), 0)
     np.random.seed(random_seed)
     rand_perm = np.random.permutation(len(X))
     return X[rand_perm], y[rand_perm]
@@ -138,8 +141,8 @@ def evaluate_label_specific(model, test_loader):
     gpu = next(model.parameters()).device
 
     last_layer = list(model.children())[-1]
-    correct = [0] * last_layer.fc3.out_features
-    total = [0] * last_layer.fc3.out_features
+    correct = [0] * last_layer.out_features
+    total = [0] * last_layer.out_features
 
     with torch.no_grad():
         for inputs, labels in test_loader:
