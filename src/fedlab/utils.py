@@ -22,7 +22,7 @@ def get_model(args):
     if args.model == "tinymlp":
         return TinyMLP(784, 10).cuda()
     
-def subsample_trainset (dataset, fraction = 0.1):
+def subsample_trainset(dataset, fraction = 0.1):
 
     subsets = []
     for cid in range(dataset.num_clients):
@@ -140,9 +140,17 @@ def evaluate_label_specific(model, test_loader):
     model.eval()
     gpu = next(model.parameters()).device
 
-    last_layer = list(model.children())[-1]
-    correct = [0] * last_layer.out_features
-    total = [0] * last_layer.out_features
+    # Get the number of output features
+    with torch.no_grad():
+        for inputs, labels in test_loader:
+            inputs = inputs.to(gpu)
+            labels = labels.to(gpu)
+            output_shape = model(inputs).shape
+            num_outputs = output_shape[-1]
+            break
+    
+    correct = [0] * num_outputs
+    total = [0] * num_outputs
 
     with torch.no_grad():
         for inputs, labels in test_loader:

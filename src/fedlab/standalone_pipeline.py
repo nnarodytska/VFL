@@ -83,7 +83,7 @@ class EvalPipeline(StandalonePipeline):
             #      client {client}: "+ "loss {:.4f}, test accuracy {:.4f} (from {:.4f})".format(loss, acc, client_stats_pre_personalization[client]["local_accuracy"]))
             loss_g, acc_g = evaluate(self.trainer._model, nn.CrossEntropyLoss(), self.test_loader)
             # print(f"after personalization: client {client}: "+ "global loss {:.4f}, test accuracy {:.4f} (from {:.4f})".format(loss_g, acc_g, client_stats_pre_personalization[client]["global_accuracy"]))
-            label_specific_acc = evaluate_label_specific(self.trainer._model, nn.CrossEntropyLoss(), data_loader)
+            label_specific_acc = evaluate_label_specific(self.trainer._model, data_loader)
 
             client_stats_post_personalization[client] = {}
             client_stats_post_personalization[client]["global_accuracy"] = acc_g

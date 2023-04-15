@@ -93,9 +93,6 @@ print("Global model loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-test_data = torchvision.datasets.MNIST(root="../../datasets/mnist/",
-                                       train=False,
-                                       transform=transforms.ToTensor())
 concept_to_class = {
     "Loop": [0, 2, 6, 8, 9],
     "Vertical Line": [1, 4, 7],
