@@ -17,7 +17,7 @@ torch.manual_seed(0)
 from mlp import MLP
 from standalone_pipeline import EvalPipeline
 from partitioned_mnist import PartitionedMNIST
-from setup import setup_args
+from setup import setup_args, setup_args_load
 from basic_client_modifed import SGDSerialClientTrainerExt
 from decision_tree import get_invariant, validate
 from utils import generate_concept_dataset, get_model, subsample_trainset
@@ -27,8 +27,7 @@ from fedlab.contrib.algorithm.basic_server import SyncServerHandler
 from fedlab.utils.functional import evaluate
 from torch import nn
 
-args = setup_args()
-print(vars(args))
+args = setup_args_load()
 model = get_model(args)
 
 
