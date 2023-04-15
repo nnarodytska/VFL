@@ -52,7 +52,7 @@ python3 personalize.py --personalization_steps_replay 50 --personalization_sim_w
 python3 personalize.py --personalization_steps_replay 50 --personalization_sim_weight 0.005 --total_client 10 --com_round 25 --sample_ratio 0.9 --batch_size 256 --epochs 5 --lr 0.1 --major_classes_num 1 --personalization_steps 25 --augement_data_percent_per_class  0.005 --model smallmlp --augement_data_with_zeros 250;
  -->
 
-The latest model (04/10/2023) using configs:
+The latest model (04/10/2023) using configs for tiny ans small models, respectively:
 
 ```
 python3 personalize.py --config_info ../../datasets/mnist/exps_shortcuts/shortcut_april_10_tiny.json --personalization_steps_replay 50 --personalization_sim_weight 0.005
