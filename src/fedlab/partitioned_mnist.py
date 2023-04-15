@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import copy
+import json
 from math import ceil
 import os
 
@@ -118,6 +119,7 @@ class PartitionedMNIST(FedDataset):
             os.mkdir(os.path.join(self.path, "test"))
             os.mkdir(os.path.join(self.path, "reports"))
             os.mkdir(os.path.join(self.path, "models"))
+
         else:
             if skip_regen:
                 return

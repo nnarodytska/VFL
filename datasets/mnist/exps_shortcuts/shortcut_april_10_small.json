@@ -1,0 +1,2 @@
+{"data_path":   "../../datasets/mnist/partition_noniid-#label_major_classes_num_1_clients_10_dir_alpha_None_augement_data_percent_per_class_0.005_augement_data_with_zeros_250_seed_42/config_data.json",
+ "models_path": "../../datasets/mnist/partition_noniid-#label_major_classes_num_1_clients_10_dir_alpha_None_augement_data_percent_per_class_0.005_augement_data_with_zeros_250_seed_42/models/batch_size_256_com_round_25_epochs_5_lr_0.1_sample_ratio_0.9_personalization_steps_25_model_smallmlp/config_model.json"}

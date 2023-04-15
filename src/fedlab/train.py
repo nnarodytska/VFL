@@ -1,8 +1,9 @@
 from json import load
+import json
 import os
 import random
 from copy import deepcopy
-from fedlab.utils import get_model
+from utils import get_model
 
 import torchvision
 import torchvision.transforms as transforms
@@ -23,9 +24,9 @@ from fedlab.contrib.algorithm.basic_server import SyncServerHandler
 
 
 args = setup_args()
+
+
 model = get_model(args)
-
-
 # server
 handler = SyncServerHandler(model = model, 
                             device = 'cuda:0',
@@ -57,6 +58,8 @@ dataset = PartitionedMNIST( root= args.root_path,
                             transform=transforms.Compose(
                              [transforms.ToPILImage(), transforms.ToTensor()]))
 
+
+
 trainer.setup_dataset(dataset)
 trainer.setup_optim(args.epochs, args.batch_size, args.lr)
 
@@ -68,5 +71,15 @@ test_loader = DataLoader(test_data, batch_size=1024)
 # global main
 standalone_eval = EvalPipeline(handler=handler, trainer=trainer, test_loader=test_loader)
 standalone_eval.main()
+
 standalone_eval.personalize(nb_rounds=args.personalization_steps, save_path= args.models_path, 
                             per_lr = args.personalization_lr, save = True)
+
+jfile = os.path.join(args.data_path, 'config_data.json')
+with open(jfile, 'w') as fp:
+    json.dump(args.json_args_data, fp)
+jfile = os.path.join(args.models_path, 'config_model.json')
+with open(jfile, 'w') as fp:
+    json.dump(args.json_args_model, fp)
+
+
