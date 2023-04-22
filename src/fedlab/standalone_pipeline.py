@@ -3,7 +3,7 @@ from fedlab.utils.functional import evaluate
 from fedlab.core.standalone import StandalonePipeline
 import torch
 from torch import nn
-from utils import evaluate_rules, evaluate_label_specific
+from utils import evaluate_rules, evaluate_label_specific, plot_client_stats
 
 class EvalPipeline(StandalonePipeline):
     def __init__(self, handler, trainer, test_loader):
@@ -104,9 +104,11 @@ class EvalPipeline(StandalonePipeline):
         print("\nBefore personalization results:")
         for id, client in enumerate(clients):
             print(f'Client {client}: ', client_stats_pre_personalization[client])
+            plot_client_stats(client_stats_pre_personalization[client], id, "pre")
         print("\nAfter personalization results:")
         for id, client in enumerate(clients):
             print(f'Client {client}: ', client_stats_post_personalization[client])
+            plot_client_stats(client_stats_post_personalization[client], id, "post")
 
 
     def save_model(self, path, model, name ):

@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader, Dataset, BatchSampler
 from typing import List, Tuple, Dict
 from pathlib import Path
 from fedlab.utils.functional import AverageMeter
+import matplotlib.pyplot as plt
 
 from mlp import MLP, SmallMLP, TinyMLP
 from decision_tree import is_rule_sat, dist_to_rule
@@ -166,3 +167,28 @@ def evaluate_label_specific(model, test_loader):
 
     accuracy = [correct[i] / total[i] for i in range(len(correct))]
     return accuracy
+
+def plot_client_stats(client_stats,id,name):
+    # Create the figure and axis objects
+    fig, ax = plt.subplots()
+
+    # Plot the global and local accuracies as horizontal lines
+    ax.axhline(y=client_stats["global_accuracy"], color="blue", linestyle="--", label="Global Accuracy")
+    ax.axhline(y=client_stats["local_accuracy"], color="green", linestyle="--", label="Local Accuracy")
+
+    # Plot the label-specific accuracies as bars
+    ind = np.arange(10)  # the x-axis locations for the bars
+    width = 0.35  # the width of the bars
+    ax.bar(ind - width/2, client_stats["label_specific_global_accuracy"], width, color="blue", label="Global Label-Specific Accuracy")
+    ax.bar(ind + width/2, client_stats["label_specific_local_accuracy"], width, color="green", label="Local Label-Specific Accuracy")
+
+    # Add axis labels and title
+    ax.set_xlabel("Labels")
+    ax.set_ylabel("Accuracy")
+    ax.set_title(f'Client {id} stats')
+
+    # Add a legend
+    ax.legend()
+
+    # Save the plot to disk
+    plt.savefig(f'client_stats_{id}_{name}'.png')
