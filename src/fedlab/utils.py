@@ -191,4 +191,4 @@ def plot_client_stats(client_stats,id,name):
     ax.legend()
 
     # Save the plot to disk
-    plt.savefig(f'client_stats_{id}_{name}'.png')
+    plt.savefig(f'client_stats_{id}_{name}.png')
