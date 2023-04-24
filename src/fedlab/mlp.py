@@ -91,3 +91,7 @@ class TinyMLP(nn.Module):
         x = self.relu(self.fc3(x))
         x = self.fc4(x)
         return x
+    def layer2_input(self, x):
+        x = x.view(x.shape[0], -1)
+        x = self.relu(self.fc1(x))
+        return x
