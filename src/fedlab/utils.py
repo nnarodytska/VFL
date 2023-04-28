@@ -10,8 +10,10 @@ from pathlib import Path
 from fedlab.utils.functional import AverageMeter
 import matplotlib.pyplot as plt
 
-from mlp import MLP, SmallMLP, TinyMLP
+from mlp import MLP, SmallMLP, TinyMLP, MicroMLP, NanoMLP
 from decision_tree import is_rule_sat, dist_to_rule
+
+SPECIAL_CASE_DATA_ZEROS_ONES = 100
 
 def get_model(args):
     if args.model == "mlp":
@@ -23,6 +25,18 @@ def get_model(args):
     if args.model == "tinymlp":
         return TinyMLP(784, 10).cuda()
     
+    if args.model == "micromlp":
+        return MicroMLP(784, 10).cuda()
+
+
+    if args.model == "nanomlp":
+        return NanoMLP(784, 10).cuda()
+
+
+def extract_testset(dataset, type = "test"):
+    return  dataset.get_full_dataset(type = type)
+
+
 def subsample_trainset(dataset, fraction = 0.1):
 
     subsets = []
@@ -117,6 +131,33 @@ def calculate_dist_to_rule(input_to_rule_map, latent_vectors, rules):
 def calculate_similarity_loss(dist_rep_to_rule):
     return torch.sum(dist_rep_to_rule)
 
+def evaluate(model, criterion, test_loader):
+    """Evaluate classify task model accuracy.
+    
+    Returns:
+        (loss.sum, acc.avg)
+    """
+    model.eval()
+    gpu = next(model.parameters()).device
+
+    loss_ = AverageMeter()
+    acc_ = AverageMeter()
+    with torch.no_grad():
+        for inputs, labels in test_loader:
+            inputs = inputs.to(gpu)
+            labels = labels.to(gpu)
+
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            # print(len(labels), labels)
+
+            _, predicted = torch.max(outputs, 1)
+            loss_.update(loss.item())
+            acc_.update(torch.sum(predicted.eq(labels)).item(), len(labels))
+           #print(len(labels[labels == 0]), len(labels[labels == 1]), loss_.sum, acc_.avg)
+    return loss_.sum, acc_.avg
+
+
 def evaluate_rules(model, rules, data_loader):
     rule_sat_cnt = [0] * len(rules)
     gpu = next(model.parameters()).device
@@ -164,8 +205,14 @@ def evaluate_label_specific(model, test_loader):
                 label = labels[i]
                 correct[label] += (predicted[i] == label).item()
                 total[label] += 1
+                
 
-    accuracy = [correct[i] / total[i] for i in range(len(correct))]
+    accuracy = []
+    for i in range(len(correct)):
+        if ( total[i] > 0):
+            accuracy.append(correct[i] / total[i])
+        else:
+            accuracy.append(0)
     return accuracy
 
 def plot_client_stats(client_stats,id,name):

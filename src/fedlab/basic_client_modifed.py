@@ -65,6 +65,8 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
             input_to_rule_map = map_inputs_to_rules(self.model, self.rules, train_loader)
 
         batch_size = train_loader.batch_size
+        # print(self.epochs)
+        # exit()
         for _ in range(self.epochs):
             idx_strt = 0
             for data, target in train_loader:
@@ -74,8 +76,7 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
 
                 if (self.personalization):
                     assert(self.personalization_rounds != -1)
-
-                    #print(f"personalization_rounds = {rounds}")
+                    # print(f"personalization_rounds = {rounds}")
                     if rounds >= self.personalization_rounds:
                         #print(self.model_parameters)
                         #exit()
@@ -97,6 +98,8 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
                         self.optimizer.zero_grad()
                         loss.backward()
                         self.optimizer.step()
+                        #print(len(target[target == 0]), len(target[target == 1]), float(loss))
+
 
                 else:
                     output = self.model(data)
@@ -109,5 +112,4 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
                 rounds += 1
                 idx_strt += batch_size
                         
-
         return [self.model_parameters]

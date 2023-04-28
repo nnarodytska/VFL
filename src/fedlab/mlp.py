@@ -91,3 +91,40 @@ class TinyMLP(nn.Module):
         x = self.relu(self.fc3(x))
         x = self.fc4(x)
         return x
+
+class MicroMLP(nn.Module):
+    def __init__(self, input_size, output_size):
+        super(MicroMLP, self).__init__()
+        self.fc1 = nn.Linear(input_size, 20)
+        self.fc2 = nn.Linear(20, 10)
+        self.fc3 = nn.Linear(10, output_size)
+        self.relu = nn.ReLU()
+    def input_to_representation(self, x):
+        x = x.view(x.shape[0], -1)
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        return x
+
+    def forward(self, x):
+        x = x.view(x.shape[0], -1)
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+class NanoMLP(nn.Module):
+    def __init__(self, input_size, output_size):
+        super(NanoMLP, self).__init__()
+        self.fc1 = nn.Linear(input_size, 20)
+        self.fc2 = nn.Linear(20, output_size)
+        self.relu = nn.ReLU()
+    def input_to_representation(self, x):
+        x = x.view(x.shape[0], -1)
+        x = self.relu(self.fc1(x))
+        return x
+
+    def forward(self, x):
+        x = x.view(x.shape[0], -1)
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x

@@ -3,7 +3,7 @@ import json
 import os
 import random
 from copy import deepcopy
-from utils import get_model
+from utils import extract_testset, get_model, subsample_trainset
 
 import torchvision
 import torchvision.transforms as transforms
@@ -55,6 +55,7 @@ dataset = PartitionedMNIST( root= args.root_path,
                             skip_regen = True,
                             augment_percent=args.augement_data_percent_per_class,
                             augment_zeros = args.augement_data_with_zeros,
+                            special_case = args.special_data,
                             transform=transforms.Compose(
                              [transforms.ToPILImage(), transforms.ToTensor()]))
 
@@ -63,10 +64,17 @@ dataset = PartitionedMNIST( root= args.root_path,
 trainer.setup_dataset(dataset)
 trainer.setup_optim(args.epochs, args.batch_size, args.lr)
 
-test_data = torchvision.datasets.MNIST(root="../../datasets/mnist/",
-                                       train=False,
-                                       transform=transforms.ToTensor())
-test_loader = DataLoader(test_data, batch_size=1024)
+# test_data = torchvision.datasets.MNIST(root="../../datasets/mnist/",
+#                                        train=False,
+#                                        transform=transforms.ToTensor())
+# test_loader = DataLoader(test_data, batch_size=1024)
+
+test_data = extract_testset(dataset, type = "test")
+test_loader = DataLoader(test_data, batch_size =  args.batch_size)
+
+
+
+
 
 # global main
 standalone_eval = EvalPipeline(handler=handler, trainer=trainer, test_loader=test_loader)

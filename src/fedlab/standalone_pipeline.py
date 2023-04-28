@@ -33,7 +33,8 @@ class EvalPipeline(StandalonePipeline):
                 loss, acc = evaluate(self.handler.model, nn.CrossEntropyLoss(), data_loader)
                 print(f"nb rounds {nb_round}: client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
 
-    def personalize(self, nb_rounds, save_path, per_lr, rules=None, sim_weight = 1, save= True):
+    def personalize(self, nb_rounds, save_path, per_lr, rules=None, sim_weight = 1, save= True, debug = 0):
+
 
         self.trainer.setup_lr(per_lr/10)
         self.trainer.setup_rules(rules)
@@ -58,7 +59,7 @@ class EvalPipeline(StandalonePipeline):
         for id, client in enumerate(clients):
             data_loader = self.trainer.dataset.get_dataloader(client, self.trainer.batch_size)
             loss, acc = evaluate(self.handler.model, nn.CrossEntropyLoss(), data_loader)
-            # print(f"before personalization: client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
+            if debug == 1: print(f"before personalization: client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
             label_specific_acc_local = evaluate_label_specific(self.handler.model, data_loader)
             label_specific_acc_global = evaluate_label_specific(self.handler.model, self.test_loader)
 
@@ -71,20 +72,25 @@ class EvalPipeline(StandalonePipeline):
                 rule_sat_cnt = evaluate_rules(self.handler.model, rules, data_loader)
                 # print(f'before personalization: client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]}')
                 client_stats_pre_personalization[client]["rules"] = [float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]
+      
+        original_epoch = self.trainer.epochs
+        self.trainer.epochs  = 100
         self.trainer.personalization = True
         self.trainer.personalization_rounds = nb_rounds
         self.trainer.local_process(broadcast, clients)
         uploads = self.trainer.uplink_package
+
+        self.trainer.epochs  = original_epoch
 
         for id, client in enumerate(clients):
             model_parameters = uploads[id][0]
             self.trainer.set_model(model_parameters)
             data_loader = self.trainer.dataset.get_dataloader(client, self.trainer.batch_size)
             loss, acc = evaluate(self.trainer._model, nn.CrossEntropyLoss(), data_loader)
-            # print(f"after personalization (# rounds {self.trainer.personalization_rounds}): \
-            #      client {client}: "+ "loss {:.4f}, test accuracy {:.4f} (from {:.4f})".format(loss, acc, client_stats_pre_personalization[client]["local_accuracy"]))
+            if debug == 1: print(f"after personalization (# rounds {self.trainer.personalization_rounds}): \
+                  client {client}: "+ "loss {:.4f}, test accuracy {:.4f} (from {:.4f})".format(loss, acc, client_stats_pre_personalization[client]["local_accuracy"]))
             loss_g, acc_g = evaluate(self.trainer._model, nn.CrossEntropyLoss(), self.test_loader)
-            # print(f"after personalization: client {client}: "+ "global loss {:.4f}, test accuracy {:.4f} (from {:.4f})".format(loss_g, acc_g, client_stats_pre_personalization[client]["global_accuracy"]))
+            if debug == 1: print(f"after personalization: client {client}: "+ "global loss {:.4f}, test accuracy {:.4f} (from {:.4f})".format(loss_g, acc_g, client_stats_pre_personalization[client]["global_accuracy"]))
             label_specific_acc_local = evaluate_label_specific(self.trainer._model, data_loader)
             label_specific_acc_global = evaluate_label_specific(self.trainer._model, self.test_loader)
 

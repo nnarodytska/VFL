@@ -20,7 +20,7 @@ from partitioned_mnist import PartitionedMNIST
 from setup import setup_args, setup_args_load
 from basic_client_modifed import SGDSerialClientTrainerExt
 from decision_tree import get_invariant, validate
-from utils import generate_concept_dataset, get_model, subsample_trainset
+from utils import extract_testset, generate_concept_dataset, get_model, subsample_trainset
 
 
 from fedlab.contrib.algorithm.basic_server import SyncServerHandler
@@ -68,10 +68,14 @@ subsample_dataset = subsample_trainset(dataset, fraction = 0.1)
 trainer.setup_dataset(dataset)
 trainer.setup_optim(args.epochs, args.batch_size, args.lr)
 
-test_data = torchvision.datasets.MNIST(root="../../datasets/mnist/",
-                                       train=False,
-                                       transform=transforms.ToTensor())
-test_loader = DataLoader(test_data, batch_size=1024)
+# test_data = torchvision.datasets.MNIST(root="../../datasets/mnist/",
+#                                        train=False,
+#                                        transform=transforms.ToTensor())
+# test_loader = DataLoader(test_data, batch_size=1024)
+
+
+test_data = extract_testset(dataset, type = "test")
+test_loader = DataLoader(test_data, batch_size =  args.batch_size)
 
 standalone_eval = EvalPipeline(handler=handler, trainer=trainer, test_loader=test_loader)
 # laod global  and read clients main

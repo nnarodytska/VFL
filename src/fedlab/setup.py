@@ -54,13 +54,14 @@ def setup_args():
     parser.add_argument("--cuda", type=bool, default =True)
     parser.add_argument("--major_classes_num", type=int, default =1)
     parser.add_argument("--augement_data_percent_per_class", type=float, default =0)
-    parser.add_argument("--augement_data_with_zeros", type=int, default =250)
+    parser.add_argument("--augement_data_with_zeros", type=int, default = 0)
 
     parser.add_argument("--partition", type=str, default ="noniid-#label")
     parser.add_argument("--root_path", type=str, default ='../../datasets/mnist/')
     parser.add_argument("--personalization_steps", type=int, default = 25)
     parser.add_argument("--personalization_lr", type=int, default = None)
-
+    
+    parser.add_argument("--special_data", type=int, default = None)
 
 
 
@@ -70,7 +71,7 @@ def setup_args():
         args.personalization_lr = args.lr/5
 
 
-    args.data_path = f"{args.root_path}/partition_{args.partition}_major_classes_num_{args.major_classes_num}_clients_{args.total_client}_dir_alpha_{args.alpha}_augement_data_percent_per_class_{args.augement_data_percent_per_class}_augement_data_with_zeros_{args.augement_data_with_zeros}_seed_{args.seed}"
+    args.data_path = f"{args.root_path}/partition_{args.partition}_major_classes_num_{args.major_classes_num}_clients_{args.total_client}_dir_alpha_{args.alpha}_augement_data_percent_per_class_{args.augement_data_percent_per_class}_augement_data_with_zeros_{args.augement_data_with_zeros}_seed_{args.seed}_special_data_{args.special_data}"
     args.models_path = f"{args.data_path}/models/batch_size_{args.batch_size}_com_round_{args.com_round}_epochs_{args.epochs}_lr_{args.lr}_sample_ratio_{args.sample_ratio}_personalization_steps_{args.personalization_steps}_model_{args.model}"
     # print( args.data_path)
     # print( args.models_path)
