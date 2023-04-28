@@ -1,0 +1,4 @@
+{"data_path":   "../../datasets/mnist/partition_noniid-#label_major_classes_num_1_clients_10_dir_alpha_None_augement_data_percent_per_class_0.001_augement_data_with_zeros_0_seed_42_special_data_None/config_data.json",
+ "models_path": "../../datasets/mnist/partition_noniid-#label_major_classes_num_1_clients_10_dir_alpha_None_augement_data_percent_per_class_0.001_augement_data_with_zeros_0_seed_42_special_data_None/models/batch_size_256_com_round_25_epochs_1_lr_0.1_sample_ratio_0.9_personalization_steps_50_model_nanomlp/config_model.json"}
+
+
