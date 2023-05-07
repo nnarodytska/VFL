@@ -33,9 +33,9 @@ class EvalPipeline(StandalonePipeline):
                 loss, acc = evaluate(self.handler.model, nn.CrossEntropyLoss(), data_loader)
                 print(f"nb rounds {nb_round}: client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
 
-    def personalize(self, nb_rounds, save_path, per_lr, rules=None, sim_weight = 1, save= True, debug = 0):
 
-
+    def personalize(self, nb_rounds, save_path, per_lr, rules=None, sim_weight = 1, save= True, debug = 0, 
+                    concept_representation = None):
         self.trainer.setup_lr(per_lr/10)
         self.trainer.setup_rules(rules)
         self.trainer.setup_sim_weight(sim_weight)
@@ -71,7 +71,11 @@ class EvalPipeline(StandalonePipeline):
             if rules != None:
                 rule_sat_cnt = evaluate_rules(self.handler.model, rules, data_loader)
                 # print(f'before personalization: client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]}')
-                client_stats_pre_personalization[client]["rules"] = [float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]
+                client_stats_pre_personalization[client]["rules_local"] = [float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]
+            if rules != None:
+                rule_sat_cnt = evaluate_rules(self.handler.model, rules, self.test_loader)
+                # print(f'before personalization: client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]}')
+                client_stats_pre_personalization[client]["rules_global"] = [float(cnt) / len(self.test_loader.dataset) for cnt in rule_sat_cnt]
       
         original_epoch = self.trainer.epochs
         self.trainer.epochs  = 100
@@ -104,7 +108,12 @@ class EvalPipeline(StandalonePipeline):
                 rule_sat_cnt = evaluate_rules(self.trainer._model, rules, data_loader)
                 # print(f'after personalization(# rounds {self.trainer.personalization_rounds}): \
                 #       client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]} (from {client_stats_pre_personalization[client]["rules"] })')
-                client_stats_post_personalization[client]["rules"] = [float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]               
+                client_stats_post_personalization[client]["rules_local"] = [float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]
+            if rules != None:
+                rule_sat_cnt = evaluate_rules(self.trainer._model, rules, self.test_loader)
+                # print(f'after personalization(# rounds {self.trainer.personalization_rounds}): \
+                #       client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]} (from {client_stats_pre_personalization[client]["rules"] })')
+                client_stats_post_personalization[client]["rules_global"] = [float(cnt) / len(self.test_loader.dataset) for cnt in rule_sat_cnt]
             if save: self.save_model(save_path, model = self.trainer._model, name = f"client_{client}")
             
         print("\nBefore personalization results:")
@@ -128,11 +137,9 @@ class EvalPipeline(StandalonePipeline):
         self.handler._model = torch.load(path+'/global.pt').cuda()
 
     def load_model(self, path):
-       
         assert(os.path.exists(path)) 
         self.handler._model = torch.load(path+'/global.pt').cuda()
  
-
         # for p_, p in zip(self.handler._model.parameters(), self.handler.model.parameters()):
         #     print(p_, p)
 

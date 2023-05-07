@@ -27,109 +27,140 @@ from fedlab.contrib.algorithm.basic_server import SyncServerHandler
 from fedlab.utils.functional import evaluate
 from torch import nn
 
-args = setup_args_load()
-model = get_model(args)
+
+def learn_linear_concept(args, model, X, Y, concept_id):
+    concept_dataset = torch.utils.data.TensorDataset(X,Y)
+    concept_dataloader = DataLoader(concept_dataset, batch_size=args.batch_size, shuffle=True)
+    optimizer = torch.optim.SGD(model.concept_layers[concept_id].parameters(), args.lr)
+    loss_fn = torch.nn.CrossEntropyLoss()
+    epochs = 3
+    for _ in range(epochs):
+        for data, target in concept_dataloader:
+            output = model.probe(data)
+            loss = loss_fn(output[concept_id], target)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+def personalize():
+    args = setup_args_load()
+    model = get_model(args)
+
+    # server
+    handler = SyncServerHandler(model = model, 
+                                device = 'cuda:0',
+                                global_round = args.com_round, 
+                                cuda = args.cuda, 
+                                sample_ratio = args.sample_ratio)
+
+    # client
+    trainer = SGDSerialClientTrainerExt(model =model, 
+                                    num_clients = args.total_client, 
+                                    cuda=args.cuda,
+                                    device = 'cuda:0',
+                                    concept_representation=args.concept_representation)
+
+    dataset = PartitionedMNIST( root= args.root_path, 
+                                path= args.data_path, 
+                                num_clients=args.total_client,
+                                dir_alpha=args.alpha,
+                                seed=args.seed,
+                                preprocess=args.preprocess,
+                                partition=args.partition, 
+                                major_classes_num= args.major_classes_num,
+                                download=True,                           
+                                verbose=True,
+                                skip_regen = True,
+                                transform=transforms.Compose(
+                                [transforms.ToPILImage(), transforms.ToTensor()]))
 
 
-# server
-handler = SyncServerHandler(model = model, 
-                            device = 'cuda:0',
-                            global_round = args.com_round, 
-                            cuda = args.cuda, 
-                            sample_ratio = args.sample_ratio)
+    ################ sample train set #########################
+    subsample_dataset = subsample_trainset(dataset, fraction = 0.1)
+    #########################
 
-# client
-trainer = SGDSerialClientTrainerExt(model =model, 
-                                 num_clients = args.total_client, 
-                                 cuda=args.cuda,
-                                 device = 'cuda:0')
+    trainer.setup_dataset(dataset)
+    trainer.setup_optim(args.epochs, args.batch_size, args.lr)
 
+    # test_data = torchvision.datasets.MNIST(root="../../datasets/mnist/",
+    #                                        train=False,
+    #                                        transform=transforms.ToTensor())
+    # test_loader = DataLoader(test_data, batch_size=1024)
 
 
-dataset = PartitionedMNIST( root= args.root_path, 
-                            path= args.data_path, 
-                            num_clients=args.total_client,
-                            dir_alpha=args.alpha,
-                            seed=args.seed,
-                            preprocess=args.preprocess,
-                            partition=args.partition, 
-                            major_classes_num= args.major_classes_num,
-                            download=True,                           
-                            verbose=True,
-                            skip_regen = True,
-                            transform=transforms.Compose(
-                             [transforms.ToPILImage(), transforms.ToTensor()]))
+    test_data = extract_testset(dataset, type = "test")
+    test_loader = DataLoader(test_data, batch_size =  args.batch_size)
+
+    standalone_eval = EvalPipeline(handler=handler, trainer=trainer, test_loader=test_loader)
+
+    # load global model and read clients main
+    standalone_eval.load_global_model(path = args.models_path)
+
+    ###############################################
+    # we have global model here
+    ###############################################
+    print("Model architecture:")
+    print(handler.model)
+    # evalution of `global` training set
+    loss, acc = evaluate(handler.model, nn.CrossEntropyLoss(), test_loader)
+    print("Global model loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
 
 
-################ sample train set #########################
-subsample_dataset = subsample_trainset(dataset, fraction = 0.1)
-#########################
+    ## extracting rules
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-trainer.setup_dataset(dataset)
-trainer.setup_optim(args.epochs, args.batch_size, args.lr)
+    # concept_to_class = {
+    #     "Loop": [0, 2, 6, 8, 9],
+    #     "Vertical Line": [1, 4, 7],
+    #     "Horizontal Line": [4, 5, 7],
+    #     "Curvature": [0, 2, 3, 5, 6, 8, 9],
+    # }
 
-# test_data = torchvision.datasets.MNIST(root="../../datasets/mnist/",
-#                                        train=False,
-#                                        transform=transforms.ToTensor())
-# test_loader = DataLoader(test_data, batch_size=1024)
+    concept_to_class = {
+        "Curvature": [0, 2, 3, 5, 6, 8, 9],
+        "Loop": [0, 6, 8, 9],
+        "Vertical Line": [1, 4, 5, 7],
+        "Horizontal Line": [2, 4, 5, 7]
+    }
+
+    # Load concept sets
+    rules = []
+    for idx, concept in enumerate(["Curvature", "Loop", "Vertical Line", "Horizontal Line"]):
+        X_train, C_train = generate_concept_dataset(subsample_dataset, concept_to_class[concept],
+                                                    subset_size=10000,
+                                                    random_seed=42)
+        X_test, C_test = generate_concept_dataset(test_data, concept_to_class[concept],
+                                                    subset_size=1000,
+                                                    random_seed=42)
+
+        # Evaluate latent representation
+        X_train = torch.from_numpy(X_train).to(device)
+        X_test = torch.from_numpy(X_test).to(device)
+        H_train = handler.model.input_to_representation(X_train)
+        H_test = handler.model.input_to_representation(X_test)
+
+        if args.concept_representation == "decision_tree":
+            invariants = get_invariant(H_train.detach().cpu().numpy(), C_train)
+
+            print(f'{len(invariants[True])} rules for concept {concept} present, {len(invariants[False])} rules for concept {concept} not present')
+            print(f'{invariants[True][0][-1]} of {int(sum(C_train))} positive samples support first rule for concept present')
+            print(f'{invariants[False][0][-1]} of {int(len(C_train) - sum(C_train))} negative samples support first rule for concept not present')
+
+            validate(invariants[True][0], True, H_test, C_test)
+            validate(invariants[False][0], False, H_test, C_test)
+
+            # We choose to enforce only two rules during personalization; the top rule for each of concept present and absent
+            rules.append((True, invariants[True][0][0], invariants[True][0][1]))
+            rules.append((False, invariants[False][0][0], invariants[False][0][1]))
+
+        elif args.concept_representation == "linear":
+            learn_linear_concept(args, handler.model, X_train, torch.from_numpy(C_train).to(device), idx)
 
 
-test_data = extract_testset(dataset, type = "test")
-test_loader = DataLoader(test_data, batch_size =  args.batch_size)
-
-standalone_eval = EvalPipeline(handler=handler, trainer=trainer, test_loader=test_loader)
-# laod global  and read clients main
-
-standalone_eval.load_global_model(path = args.models_path)
-
-###############################################
-# we have global model here
-###############################################
-print("Model architecture:")
-print(handler.model)
-# evalution of `global` trainign set
-loss, acc = evaluate(handler.model, nn.CrossEntropyLoss(), test_loader)
-print("Global model loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
+    standalone_eval.personalize(nb_rounds=args.personalization_steps_replay, save_path= args.models_path, 
+                                per_lr = args.personalization_lr, rules=rules, sim_weight=args.personalization_sim_weight, 
+                                save = False, concept_representation=args.concept_representation)
 
 
-## extracting rules
-
-device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-
-concept_to_class = {
-    "Loop": [0, 2, 6, 8, 9],
-    "Vertical Line": [1, 4, 7],
-    "Horizontal Line": [4, 5, 7],
-    "Curvature": [0, 2, 3, 5, 6, 8, 9],
-}
-# Load concept sets
-X_train, C_train = generate_concept_dataset(subsample_dataset, concept_to_class["Curvature"],
-                                               subset_size=10000, 
-                                               random_seed=42)
-X_test, C_test = generate_concept_dataset(test_data, concept_to_class["Curvature"],
-                                               subset_size=1000, 
-                                               random_seed=42)
-
-# Evaluate latent representation
-X_train = torch.from_numpy(X_train).to(device)
-X_test = torch.from_numpy(X_test).to(device)
-H_train = handler.model.input_to_representation(X_train)
-H_test = handler.model.input_to_representation(X_test)
-
-invariants = get_invariant(H_train.detach().cpu().numpy(), C_train)
-
-print(f'{len(invariants[True])} rules for concept "Curvature" present, {len(invariants[False])} rules for concept "Curvature" not present')
-print(f'{invariants[True][0][-1]} of {int(sum(C_train))} positive samples support first rule for concept present')
-print(f'{invariants[False][0][-1]} of {int(len(C_train) - sum(C_train))} negative samples support first rule for concept not present')
-
-validate(invariants[True][0], True, H_test, C_test)
-validate(invariants[False][0], False, H_test, C_test)
-
-# We choose to enforce only two rules during personalization; the top rule for each of concept present and absent 
-rules = []
-rules.append((True, invariants[True][0][0], invariants[True][0][1]))
-rules.append((False, invariants[False][0][0], invariants[False][0][1]))
-
-standalone_eval.personalize(nb_rounds=args.personalization_steps_replay, save_path= args.models_path, 
-                            per_lr = args.personalization_lr, rules=rules, sim_weight=args.personalization_sim_weight, save = False)
-
+if __name__ == "__main__":
+    personalize()

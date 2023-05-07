@@ -40,8 +40,6 @@ trainer = SGDSerialClientTrainerExt(model =model,
                                  cuda=args.cuda,
                                  device = 'cuda:0')
 
-
-
 dataset = PartitionedMNIST( root= args.root_path, 
                             path= args.data_path, 
                             num_clients=args.total_client,
@@ -59,8 +57,6 @@ dataset = PartitionedMNIST( root= args.root_path,
                             transform=transforms.Compose(
                              [transforms.ToPILImage(), transforms.ToTensor()]))
 
-
-
 trainer.setup_dataset(dataset)
 trainer.setup_optim(args.epochs, args.batch_size, args.lr)
 
@@ -71,10 +67,6 @@ trainer.setup_optim(args.epochs, args.batch_size, args.lr)
 
 test_data = extract_testset(dataset, type = "test")
 test_loader = DataLoader(test_data, batch_size =  args.batch_size)
-
-
-
-
 
 # global main
 standalone_eval = EvalPipeline(handler=handler, trainer=trainer, test_loader=test_loader)

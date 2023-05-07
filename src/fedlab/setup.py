@@ -9,6 +9,7 @@ def setup_args_load():
     parser.add_argument("--config_info", type=str)
     parser.add_argument("--personalization_steps_replay", type=int, default = None)
     parser.add_argument("--personalization_sim_weight", type=float, default = 1.0)
+    parser.add_argument("--concept_representation", type=str, default = None) # or "decision_tree" or "linear"
     args = parser.parse_args()
 
     with open(args.config_info) as f:
@@ -36,6 +37,7 @@ def setup_args_load():
     # print(args)
     # exit()
     return args
+
 def setup_args():
     # configuration
     parser = argparse.ArgumentParser(description="Standalone training example")
@@ -62,8 +64,6 @@ def setup_args():
     parser.add_argument("--personalization_lr", type=int, default = None)
     
     parser.add_argument("--special_data", type=int, default = None)
-
-
 
     args = parser.parse_args()
 

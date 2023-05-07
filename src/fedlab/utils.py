@@ -101,19 +101,20 @@ def map_inputs_to_rules(model, rules, data_loader):
     """
     input_to_rule_map = []
     gpu = next(model.parameters()).device
-    for data, target in data_loader:
-        data = data.to(gpu)
-        target = target.to(gpu)        
-        latent_vectors = model.input_to_representation(data)
-        for latent_vector in latent_vectors:
-            matching_rule = False
-            for idx_rule, rule in enumerate(rules):
-                if is_rule_sat(rule, latent_vector):
-                    input_to_rule_map.append(idx_rule)
-                    matching_rule = True
-                    break
-            if not matching_rule:
-                input_to_rule_map.append(-1)
+    with torch.no_grad():
+        for data, target in data_loader:
+            data = data.to(gpu)
+            target = target.to(gpu)        
+            latent_vectors = model.input_to_representation(data)
+            for latent_vector in latent_vectors:
+                matching_rule = False
+                for idx_rule, rule in enumerate(rules):
+                    if is_rule_sat(rule, latent_vector):
+                        input_to_rule_map.append(idx_rule)
+                        matching_rule = True
+                        break
+                if not matching_rule:
+                    input_to_rule_map.append(-1)
     
     return input_to_rule_map
 
@@ -161,15 +162,16 @@ def evaluate(model, criterion, test_loader):
 def evaluate_rules(model, rules, data_loader):
     rule_sat_cnt = [0] * len(rules)
     gpu = next(model.parameters()).device
-    for data, target in data_loader:
-        data = data.to(gpu)
-        target = target.to(gpu)
-        latent_vectors = model.input_to_representation(data)
-        for latent_vector in latent_vectors:
-            for idx_rule, rule in enumerate(rules):
-                if is_rule_sat(rule, latent_vector):
-                    rule_sat_cnt[idx_rule] += 1
-                    break
+    with torch.no_grad():
+        for data, target in data_loader:
+            data = data.to(gpu)
+            target = target.to(gpu)
+            latent_vectors = model.input_to_representation(data)
+            for latent_vector in latent_vectors:
+                for idx_rule, rule in enumerate(rules):
+                    if is_rule_sat(rule, latent_vector):
+                        rule_sat_cnt[idx_rule] += 1
+                        break
     
     return rule_sat_cnt
 

@@ -118,6 +118,12 @@ class NanoMLP(nn.Module):
         self.fc1 = nn.Linear(input_size, 20)
         self.fc2 = nn.Linear(20, output_size)
         self.relu = nn.ReLU()
+        concepts = ["Curvature", "Loop", "Vertical Line", "Horizontal Line"]
+        self.concept_layers = []
+        for concept in concepts:
+            self.concept_layers.append(nn.Linear(20, 2))
+        self.pred_layers = [self.fc1, self.fc2]
+
     def input_to_representation(self, x):
         x = x.view(x.shape[0], -1)
         x = self.relu(self.fc1(x))
@@ -128,3 +134,11 @@ class NanoMLP(nn.Module):
         x = self.relu(self.fc1(x))
         x = self.fc2(x)
         return x
+    
+    def probe(self, x):
+        x = x.view(x.shape[0], -1)
+        x = self.relu(self.fc1(x))
+        output = []
+        for concept_layer in self.concept_layers:
+            output.append(concept_layer(x))
+        return tuple(output)
