@@ -60,3 +60,21 @@ python3 personalize.py --config_info ../../datasets/mnist/exps_shortcuts/shortcu
 python3 personalize.py --config_info ../../datasets/mnist/exps_shortcuts/shortcut_april_10_small.json --personalization_steps_replay 50 --personalization_sim_weight 0.005
 
 ```
+
+
+
+To train a nano model, one performs a sequence of steps:
+
+1. run training
+```
+ train.py  --total_client 10 --com_round 25 --sample_ratio 0.9 --batch_size 256 --epochs 2 --lr 0.1 --major_classes_num 1 --personalization_steps 25 --augement_data_percent_per_class  0.005 --model nanomlp
+```
+
+2. it creates a config file in the same folder "../../datasets/mnist/exps_shortcuts/config_<DATE>.json"
+
+3.  run personalization
+
+```
+python3 personalize.py --config_info  "../../datasets/mnist/exps_shortcuts/config_<DATE>.json" --personalization_steps_replay 50 --personalization_sim_weight 0.005
+```
+
