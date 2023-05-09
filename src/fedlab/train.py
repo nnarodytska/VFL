@@ -87,7 +87,8 @@ json_shortcut["models_path"] = args.models_path
 json_shortcut["data_path"] = args.data_path
 now = datetime.now() 
 
-shortcut_name = f"../../datasets/mnist/exps_shortcuts/config_{now.strftime('%m-%d-%Y-%H-%M-%S')}"
+shortcut_name = f"../../datasets/mnist/exps_shortcuts/config_{now.strftime('%m-%d-%Y-%H-%M-%S').json}"
+print(shortcut_name)
 with open(shortcut_name, 'w') as fp:
     json.dump(json_shortcut, fp)
 
