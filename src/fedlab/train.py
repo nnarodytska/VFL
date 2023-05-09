@@ -83,3 +83,8 @@ with open(jfile, 'w') as fp:
     json.dump(args.json_args_model, fp)
 
 
+print(args.json_args_data)
+print(args.json_args_model)
+
+
+
