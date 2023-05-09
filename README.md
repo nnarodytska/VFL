@@ -61,6 +61,7 @@ python3 personalize.py --config_info ../../datasets/mnist/exps_shortcuts/shortcu
 
 ```
 
+# Training
 
 
 To train a nano model, please perform a sequence of steps:
