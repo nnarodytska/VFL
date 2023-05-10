@@ -77,7 +77,7 @@ class EvalPipeline(StandalonePipeline):
                 # print(f'before personalization: client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]}')
                 client_stats_pre_personalization[client]["rules_global"] = [float(cnt) / len(self.test_loader.dataset) for cnt in rule_sat_cnt]
             
-            if self.handler.model.concept_representation == "linear":
+            if self.trainer.concept_representation == "linear":
                 concept_present_count = evaluate_linear_concepts(self.handler.model, data_loader)
                 client_stats_pre_personalization[client]["concepts_local"] = [float(cnt) / len(data_loader.dataset) for cnt in concept_present_count]
                 concept_present_count = evaluate_linear_concepts(self.handler.model, self.test_loader)
@@ -121,7 +121,7 @@ class EvalPipeline(StandalonePipeline):
                 #       client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]} (from {client_stats_pre_personalization[client]["rules"] })')
                 client_stats_post_personalization[client]["rules_global"] = [float(cnt) / len(self.test_loader.dataset) for cnt in rule_sat_cnt]
             
-            if self.handler.model.concept_representation == "linear":
+            if self.trainer.concept_representation == "linear":
                 concept_present_count = evaluate_linear_concepts(self.trainer._model, data_loader)
                 client_stats_post_personalization[client]["concepts_local"] = [float(cnt) / len(data_loader.dataset) for cnt in concept_present_count]
                 concept_present_count = evaluate_linear_concepts(self.trainer._model, self.test_loader)
