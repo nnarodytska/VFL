@@ -21,7 +21,7 @@ from setup import setup_args
 from basic_client_modifed import SGDSerialClientTrainerExt
 
 from fedlab.contrib.algorithm.basic_server import SyncServerHandler
-
+from datetime import datetime
 
 args = setup_args()
 model = get_model(args)
@@ -79,5 +79,17 @@ with open(jfile, 'w') as fp:
 jfile = os.path.join(args.models_path, 'config_model.json')
 with open(jfile, 'w') as fp:
     json.dump(args.json_args_model, fp)
+
+json_shortcut = {}
+json_shortcut["models_path"] =  os.path.join(args.models_path, 'config_model.json')
+json_shortcut["data_path"] =  os.path.join(args.data_path, 'config_data.json')
+now = datetime.now() 
+
+shortcut_name = f"../../datasets/mnist/exps_shortcuts/config_{now.strftime('%m-%d-%Y-%H-%M-%S')}.json"
+print(shortcut_name)
+with open(shortcut_name, 'w') as fp:
+    json.dump(json_shortcut, fp)
+
+
 
 
