@@ -99,6 +99,7 @@ class MicroMLP(nn.Module):
         self.fc2 = nn.Linear(20, 10)
         self.fc3 = nn.Linear(10, output_size)
         self.relu = nn.ReLU()
+
     def input_to_representation(self, x):
         x = x.view(x.shape[0], -1)
         x = self.relu(self.fc1(x))
@@ -115,14 +116,25 @@ class MicroMLP(nn.Module):
 class NanoMLP(nn.Module):
     def __init__(self, input_size, output_size):
         super(NanoMLP, self).__init__()
+        self.probe_mode = False
         self.fc1 = nn.Linear(input_size, 20)
         self.fc2 = nn.Linear(20, output_size)
         self.relu = nn.ReLU()
-        concepts = ["Curvature", "Loop", "Vertical Line", "Horizontal Line"]
-        self.concept_layers = []
-        for concept in concepts:
-            self.concept_layers.append(nn.Linear(20, 2))
+        
+        self.concepts = ["Curvature", "Loop", "Vertical Line", "Horizontal Line"]
+        self.curvature_probe = nn.Linear(20, 2, bias=False)
+        self.loop_probe = nn.Linear(20, 2, bias=False)
+        self.vline_probe = nn.Linear(20, 2, bias=False)
+        self.hline_probe = nn.Linear(20, 2, bias=False)
+
+        self.concept_layers = [self.curvature_probe, self.loop_probe, self.vline_probe, self.hline_probe]
         self.pred_layers = [self.fc1, self.fc2]
+
+    def start_probe_mode(self):
+        self.probe_mode = True
+
+    def stop_probe_mode(self):
+        self.probe_mode = False
 
     def input_to_representation(self, x):
         x = x.view(x.shape[0], -1)
@@ -132,8 +144,16 @@ class NanoMLP(nn.Module):
     def forward(self, x):
         x = x.view(x.shape[0], -1)
         x = self.relu(self.fc1(x))
+        concept_outputs = []
+        concept_outputs.append(self.curvature_probe(x))
+        concept_outputs.append(self.loop_probe(x))
+        concept_outputs.append(self.vline_probe(x))
+        concept_outputs.append(self.hline_probe(x))
         x = self.fc2(x)
-        return x
+        if self.probe_mode:
+            return x, *concept_outputs
+        else:
+            return x
     
     def probe(self, x):
         x = x.view(x.shape[0], -1)

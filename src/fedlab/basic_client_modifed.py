@@ -95,15 +95,17 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
             input_to_rule_map = map_inputs_to_rules(self.model, self.rules, train_loader)
         
         if self.concept_representation == "linear" and self.personalization:
+            self._model.start_probe_mode()
             input_to_concept_labels = []
             with torch.no_grad():
                 for data, target in train_loader:
                     if self.cuda:
                         data = data.cuda(self.device)
                         target = target.cuda(self.device)
-                    concept_outputs = self._model.probe(data)
+                    concept_outputs = self._model(data)[1:-1]
                     input_to_concept_labels.append(torch.cat(concept_outputs))
                 input_to_concept_labels = torch.stack(input_to_concept_labels)
+            self._model.stop_probe_mode()
                 
 
         batch_size = train_loader.batch_size
@@ -124,15 +126,17 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
                         #exit()
                         return [self.model_parameters]
                     else:
-                        output = self.model(data)
-                        loss_base = self.criterion(output, target)
-
                         if self.concept_representation == None:
+                            output = self.model(data)
+                            loss_base = self.criterion(output, target)
                             loss = loss_base
                             self.optimizer.zero_grad()
                             loss.backward()
                             self.optimizer.step()
+
                         elif self.concept_representation == "decision_tree":
+                            output = self.model(data)
+                            loss_base = self.criterion(output, target)
                             # calculate "distance" of internal representation from rules and corresponding loss
                             latent_vectors = self.model.input_to_representation(data)
                             dist_rep_to_rule = calculate_dist_to_rule(input_to_rule_map[idx_strt:idx_strt+batch_size], latent_vectors, self.rules)
@@ -142,8 +146,12 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
                             loss.backward()
                             self.optimizer.step()
                             #print(len(target[target == 0]), len(target[target == 1]), float(loss))
+
                         elif self.concept_representation == "linear":
-                            concept_labels = self._model.probe(data)
+                            self._model.start_probe_mode()
+                            output = self.model(data)
+                            loss_base = self.criterion(output[0], target)
+                            concept_labels = output[1:-1]
                             loss_concept = 0
                             for c_idx, concept_label in enumerate(concept_labels):
                                 loss_concept += self.criterion(concept_label, input_to_concept_labels[idx_strt:idx_strt+batch_size][c_idx])
@@ -151,6 +159,7 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
                             self.optimizer.zero_grad()
                             loss.backward()
                             self.optimizer.step()
+                            self._model.stop_probe_mode()
                 else:
                     output = self.model(data)
                     loss = self.criterion(output, target)

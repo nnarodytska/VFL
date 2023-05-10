@@ -34,8 +34,7 @@ class EvalPipeline(StandalonePipeline):
                 print(f"nb rounds {nb_round}: client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
 
 
-    def personalize(self, nb_rounds, save_path, per_lr, rules=None, sim_weight = 1, save= True, debug = 0, 
-                    concept_representation = None):
+    def personalize(self, nb_rounds, save_path, per_lr, rules=None, sim_weight = 1, save= True, debug = 0):
         self.trainer.setup_lr(per_lr/10)
         self.trainer.setup_rules(rules)
         self.trainer.setup_sim_weight(sim_weight)

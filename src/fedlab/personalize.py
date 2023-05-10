@@ -34,15 +34,19 @@ def learn_linear_concept(args, model, X, Y, concept_id):
     optimizer = torch.optim.SGD(model.concept_layers[concept_id].parameters(), args.lr)
     loss_fn = torch.nn.CrossEntropyLoss()
     epochs = 3
+    model.train()
+    model.start_probe_mode()
     for _ in range(epochs):
         for data, target in concept_dataloader:
-            output = model.probe(data)
-            loss = loss_fn(output[concept_id], target)
+            output = model(data)
+            loss = loss_fn(output[concept_id+1], target)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+    model.stop_probe_mode()
 
 def personalize():
+    ## extracting rules
     args = setup_args_load()
     model = get_model(args)
 
@@ -105,10 +109,6 @@ def personalize():
     loss, acc = evaluate(handler.model, nn.CrossEntropyLoss(), test_loader)
     print("Global model loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
 
-
-    ## extracting rules
-    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-
     # concept_to_class = {
     #     "Loop": [0, 2, 6, 8, 9],
     #     "Vertical Line": [1, 4, 7],
@@ -134,12 +134,14 @@ def personalize():
                                                     random_seed=42)
 
         # Evaluate latent representation
-        X_train = torch.from_numpy(X_train).to(device)
-        X_test = torch.from_numpy(X_test).to(device)
-        H_train = handler.model.input_to_representation(X_train)
-        H_test = handler.model.input_to_representation(X_test)
+        X_train = torch.from_numpy(X_train).to("cuda:0")
+        X_test = torch.from_numpy(X_test).to("cuda:0")
+        C_train = torch.from_numpy(C_train).to("cuda:0")
+        C_test = torch.from_numpy(C_test).to("cuda:0")
 
         if args.concept_representation == "decision_tree":
+            H_train = handler.model.input_to_representation(X_train)
+            H_test = handler.model.input_to_representation(X_test)
             invariants = get_invariant(H_train.detach().cpu().numpy(), C_train)
 
             print(f'{len(invariants[True])} rules for concept {concept} present, {len(invariants[False])} rules for concept {concept} not present')
@@ -154,12 +156,12 @@ def personalize():
             rules.append((False, invariants[False][0][0], invariants[False][0][1]))
 
         elif args.concept_representation == "linear":
-            learn_linear_concept(args, handler.model, X_train, torch.from_numpy(C_train).to(device), idx)
+            learn_linear_concept(args, handler.model, X_train, C_train, idx)
 
 
     standalone_eval.personalize(nb_rounds=args.personalization_steps_replay, save_path= args.models_path, 
                                 per_lr = args.personalization_lr, rules=rules, sim_weight=args.personalization_sim_weight, 
-                                save = False, concept_representation=args.concept_representation)
+                                save = False)
 
 
 if __name__ == "__main__":

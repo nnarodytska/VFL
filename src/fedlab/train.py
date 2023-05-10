@@ -24,8 +24,6 @@ from fedlab.contrib.algorithm.basic_server import SyncServerHandler
 
 
 args = setup_args()
-
-
 model = get_model(args)
 # server
 handler = SyncServerHandler(model = model, 
