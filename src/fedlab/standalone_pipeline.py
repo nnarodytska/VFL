@@ -3,7 +3,7 @@ from fedlab.utils.functional import evaluate
 from fedlab.core.standalone import StandalonePipeline
 import torch
 from torch import nn
-from utils import evaluate_rules, evaluate_label_specific, plot_client_stats
+from utils import evaluate_rules, evaluate_label_specific, plot_client_stats, evaluate_linear_concepts
 
 class EvalPipeline(StandalonePipeline):
     def __init__(self, handler, trainer, test_loader):
@@ -38,6 +38,7 @@ class EvalPipeline(StandalonePipeline):
         self.trainer.setup_lr(per_lr/10)
         self.trainer.setup_rules(rules)
         self.trainer.setup_sim_weight(sim_weight)
+        self.trainer.setup_global_model(self.handler._model)
 
         # server side
         clients = list(range(self.handler.num_clients))
@@ -71,10 +72,16 @@ class EvalPipeline(StandalonePipeline):
                 rule_sat_cnt = evaluate_rules(self.handler.model, rules, data_loader)
                 # print(f'before personalization: client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]}')
                 client_stats_pre_personalization[client]["rules_local"] = [float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]
-            if rules != None:
+                
                 rule_sat_cnt = evaluate_rules(self.handler.model, rules, self.test_loader)
                 # print(f'before personalization: client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]}')
                 client_stats_pre_personalization[client]["rules_global"] = [float(cnt) / len(self.test_loader.dataset) for cnt in rule_sat_cnt]
+            
+            if self.handler.model.concept_representation == "linear":
+                concept_present_count = evaluate_linear_concepts(self.handler.model, data_loader)
+                client_stats_pre_personalization[client]["concepts_local"] = [float(cnt) / len(data_loader.dataset) for cnt in concept_present_count]
+                concept_present_count = evaluate_linear_concepts(self.handler.model, self.test_loader)
+                client_stats_pre_personalization[client]["concepts_global"] = [float(cnt) / len(self.test_loader.dataset) for cnt in concept_present_count]
       
         original_epoch = self.trainer.epochs
         self.trainer.epochs  = 100
@@ -108,11 +115,18 @@ class EvalPipeline(StandalonePipeline):
                 # print(f'after personalization(# rounds {self.trainer.personalization_rounds}): \
                 #       client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]} (from {client_stats_pre_personalization[client]["rules"] })')
                 client_stats_post_personalization[client]["rules_local"] = [float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]
-            if rules != None:
+
                 rule_sat_cnt = evaluate_rules(self.trainer._model, rules, self.test_loader)
                 # print(f'after personalization(# rounds {self.trainer.personalization_rounds}): \
                 #       client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]} (from {client_stats_pre_personalization[client]["rules"] })')
                 client_stats_post_personalization[client]["rules_global"] = [float(cnt) / len(self.test_loader.dataset) for cnt in rule_sat_cnt]
+            
+            if self.handler.model.concept_representation == "linear":
+                concept_present_count = evaluate_linear_concepts(self.trainer._model, data_loader)
+                client_stats_post_personalization[client]["concepts_local"] = [float(cnt) / len(data_loader.dataset) for cnt in concept_present_count]
+                concept_present_count = evaluate_linear_concepts(self.trainer._model, self.test_loader)
+                client_stats_post_personalization[client]["concepts_global"] = [float(cnt) / len(self.test_loader.dataset) for cnt in concept_present_count]
+      
             if save: self.save_model(save_path, model = self.trainer._model, name = f"client_{client}")
             
         print("\nBefore personalization results:")

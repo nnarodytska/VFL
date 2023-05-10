@@ -20,30 +20,13 @@ from partitioned_mnist import PartitionedMNIST
 from setup import setup_args, setup_args_load
 from basic_client_modifed import SGDSerialClientTrainerExt
 from decision_tree import get_invariant, validate
-from utils import extract_testset, generate_concept_dataset, get_model, subsample_trainset
-
+from utils import extract_testset, generate_concept_dataset, get_model, subsample_trainset, \
+    learn_linear_concept, evaluate_linear_concept
 
 from fedlab.contrib.algorithm.basic_server import SyncServerHandler
 from fedlab.utils.functional import evaluate
 from torch import nn
 
-
-def learn_linear_concept(args, model, X, Y, concept_id):
-    concept_dataset = torch.utils.data.TensorDataset(X,Y)
-    concept_dataloader = DataLoader(concept_dataset, batch_size=args.batch_size, shuffle=True)
-    optimizer = torch.optim.SGD(model.concept_layers[concept_id].parameters(), args.lr)
-    loss_fn = torch.nn.CrossEntropyLoss()
-    epochs = 3
-    model.train()
-    model.start_probe_mode()
-    for _ in range(epochs):
-        for data, target in concept_dataloader:
-            output = model(data)
-            loss = loss_fn(output[concept_id+1], target)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-    model.stop_probe_mode()
 
 def personalize():
     ## extracting rules
@@ -157,6 +140,10 @@ def personalize():
 
         elif args.concept_representation == "linear":
             learn_linear_concept(args, handler.model, X_train, C_train, idx)
+            loss, acc = evaluate_linear_concept(args, handler.model, X_train, C_train, idx)
+            print(f'{concept} concept classifier loss {loss}, train accuracy {acc}')
+            loss, acc = evaluate_linear_concept(args, handler.model, X_test, C_test, idx)
+            print(f'{concept} concept classifier loss {loss}, test accuracy {acc}')
 
 
     standalone_eval.personalize(nb_rounds=args.personalization_steps_replay, save_path= args.models_path, 

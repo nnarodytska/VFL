@@ -7,13 +7,14 @@ import torch
 class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
     def __init__(self, model, num_clients, cuda=False, device=None, logger=None, personal=False, 
                  personalization = False, personalization_rounds = -1, rules = None, sim_weight = 1, 
-                 concept_representation = None) -> None:
+                 concept_representation = None, global_model = None) -> None:
         super().__init__(model, num_clients, cuda, device, personal)
         self.personalization_rounds = personalization_rounds
         self.personalization = personalization
         self.rules = rules
         self.sim_weight = sim_weight
         self.concept_representation = concept_representation
+        self.global_model = global_model
 
     def ok(self):
         print("ok")
@@ -41,6 +42,14 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
             weight (float): sim_weight.
         """
         self.sim_weight = weight
+    
+    def setup_global_model(self, global_model):
+        """Set up global_model.
+
+        Args:
+            global_model (torch.nn.Module): global_model.
+        """
+        self.global_model = global_model
 
     def setup_optim(self, epochs, batch_size, lr):
         """Set up local optimization configuration.
@@ -83,7 +92,6 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
         # print(self._model)
         # print(model_parameters.shape)
         self.set_model(model_parameters)
-        self._model.train()
 
         rounds = 0
         #print("----")
@@ -91,23 +99,28 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
         #print(self.optimizer)
 
         # map from data points to rules they satisfy
-        if not (self.rules is None):
-            input_to_rule_map = map_inputs_to_rules(self.model, self.rules, train_loader)
+        # if not (self.rules is None):
+        if self.personalization and self.concept_representation == "decision_tree":
+            input_to_rule_map = map_inputs_to_rules(self.global_model, self.rules, train_loader)
         
-        if self.concept_representation == "linear" and self.personalization:
-            self._model.start_probe_mode()
+        if self.personalization and self.concept_representation == "linear":
+            self.global_model.eval()
+            self.global_model.start_probe_mode()
             input_to_concept_labels = []
             with torch.no_grad():
                 for data, target in train_loader:
                     if self.cuda:
                         data = data.cuda(self.device)
                         target = target.cuda(self.device)
-                    concept_outputs = self._model(data)[1:-1]
-                    input_to_concept_labels.append(torch.cat(concept_outputs))
-                input_to_concept_labels = torch.stack(input_to_concept_labels)
-            self._model.stop_probe_mode()
+                    concept_outputs = self.global_model(data)[1:-1]
+                    concept_labels = []
+                    for c_idx, concept_output in enumerate(concept_outputs):
+                        concept_labels.append(torch.unsqueeze(torch.argmax(concept_output, dim=1), dim=-1))
+                    input_to_concept_labels.append(torch.cat(concept_labels, dim=1))
+                input_to_concept_labels = torch.cat(input_to_concept_labels)
+            self.global_model.stop_probe_mode()
                 
-
+        self._model.train()
         batch_size = train_loader.batch_size
         # print(self.epochs)
         # exit()
@@ -154,7 +167,7 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
                             concept_labels = output[1:-1]
                             loss_concept = 0
                             for c_idx, concept_label in enumerate(concept_labels):
-                                loss_concept += self.criterion(concept_label, input_to_concept_labels[idx_strt:idx_strt+batch_size][c_idx])
+                                loss_concept += self.criterion(concept_label, input_to_concept_labels[idx_strt:idx_strt+batch_size, c_idx])
                             loss = loss_base + self.sim_weight * loss_concept
                             self.optimizer.zero_grad()
                             loss.backward()

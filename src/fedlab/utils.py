@@ -81,7 +81,7 @@ def generate_concept_dataset(dataset: Dataset, concept_classes: List[int], subse
     positive_images, positive_labels = next(iter(positive_loader))
     negative_images, negative_labels = next(iter(negative_loader))
     X = np.concatenate((positive_images.cpu().numpy(), negative_images.cpu().numpy()), 0)
-    y = np.concatenate((np.ones(len(positive_images)), np.zeros(len(negative_images))), 0)
+    y = np.concatenate((np.ones(len(positive_images), dtype=np.int64), np.zeros(len(negative_images), dtype=np.int64)), 0)
     np.random.seed(random_seed)
     rand_perm = np.random.permutation(len(X))
     return X[rand_perm], y[rand_perm]
@@ -100,6 +100,7 @@ def map_inputs_to_rules(model, rules, data_loader):
         an input to rule map
     """
     input_to_rule_map = []
+    model.eval()
     gpu = next(model.parameters()).device
     with torch.no_grad():
         for data, target in data_loader:
@@ -132,35 +133,9 @@ def calculate_dist_to_rule(input_to_rule_map, latent_vectors, rules):
 def calculate_similarity_loss(dist_rep_to_rule):
     return torch.sum(dist_rep_to_rule)
 
-def evaluate(model, criterion, test_loader):
-    """Evaluate classify task model accuracy.
-    
-    Returns:
-        (loss.sum, acc.avg)
-    """
-    model.eval()
-    gpu = next(model.parameters()).device
-
-    loss_ = AverageMeter()
-    acc_ = AverageMeter()
-    with torch.no_grad():
-        for inputs, labels in test_loader:
-            inputs = inputs.to(gpu)
-            labels = labels.to(gpu)
-
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
-            # print(len(labels), labels)
-
-            _, predicted = torch.max(outputs, 1)
-            loss_.update(loss.item())
-            acc_.update(torch.sum(predicted.eq(labels)).item(), len(labels))
-           #print(len(labels[labels == 0]), len(labels[labels == 1]), loss_.sum, acc_.avg)
-    return loss_.sum, acc_.avg
-
-
 def evaluate_rules(model, rules, data_loader):
     rule_sat_cnt = [0] * len(rules)
+    model.eval()
     gpu = next(model.parameters()).device
     with torch.no_grad():
         for data, target in data_loader:
@@ -241,3 +216,80 @@ def plot_client_stats(client_stats,id,name):
 
     # Save the plot to disk
     plt.savefig(f'client_stats_{id}_{name}.png')
+
+def learn_linear_concept(args, model, X, Y, concept_id):
+    concept_dataset = torch.utils.data.TensorDataset(X,Y)
+    concept_dataloader = DataLoader(concept_dataset, batch_size=args.batch_size, shuffle=True)
+    optimizer = torch.optim.SGD(model.concept_layers[concept_id].parameters(), args.lr)
+    loss_fn = torch.nn.CrossEntropyLoss()
+    epochs = 3
+    model.train()
+    model.start_probe_mode()
+    for _ in range(epochs):
+        for data, target in concept_dataloader:
+            outputs = model(data)
+            loss = loss_fn(outputs[concept_id+1], target)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+    model.stop_probe_mode()
+
+def evaluate_linear_concept(args, model, X, Y, concept_id):
+    """Evaluate concept representation accuracy.
+    
+    Returns:
+        (loss.sum, acc.avg)
+    """
+    model.eval()
+    gpu = next(model.parameters()).device
+    concept_dataset = torch.utils.data.TensorDataset(X,Y)
+    concept_dataloader = DataLoader(concept_dataset, batch_size=args.batch_size, shuffle=True)
+    loss_fn = torch.nn.CrossEntropyLoss()
+
+    loss_ = AverageMeter()
+    acc_ = AverageMeter()
+
+    model.start_probe_mode()
+    with torch.no_grad():
+        for inputs, labels in concept_dataloader:
+            inputs = inputs.to(gpu)
+            labels = labels.to(gpu)
+
+            outputs = model(inputs)
+            loss = loss_fn(outputs[concept_id+1], labels)
+
+            _, predicted = torch.max(outputs[concept_id+1], 1)
+            loss_.update(loss.item())
+            acc_.update(torch.sum(predicted.eq(labels)).item(), len(labels))
+    model.stop_probe_mode()
+    return loss_.sum, acc_.avg
+
+def evaluate_linear_concepts(model, data_loader):
+    """Evaluate concept representation accuracy.
+    
+    Returns:
+        (loss.sum, acc.avg)
+    """
+    model.eval()
+    gpu = next(model.parameters()).device
+    model.start_probe_mode()
+
+    # Get the number of concepts
+    with torch.no_grad():
+        for data, target in data_loader:
+            data = data.to(gpu)
+            target = target.to(gpu)
+            num_concepts = len(model(data)) - 1
+            break
+
+    concept_present_cnt = [0] * num_concepts
+    with torch.no_grad():
+        for data, target in data_loader:
+            data = data.to(gpu)
+            target = target.to(gpu)
+            outputs = model(data)
+            for concept_id in range(num_concepts):
+                _, predicted = torch.max(outputs[concept_id+1], 1)
+                concept_present_cnt[concept_id] += torch.sum(predicted).item()
+    model.stop_probe_mode()
+    return concept_present_cnt
