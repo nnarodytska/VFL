@@ -121,8 +121,10 @@ def personalize():
 
         # Evaluate latent representation
         X_train = torch.from_numpy(X_train).to("cuda:0")
+        X_test_sub = torch.from_numpy(X_test_sub).to("cuda:0")
         X_test = torch.from_numpy(X_test).to("cuda:0")
         C_train = torch.from_numpy(C_train).to("cuda:0")
+        C_test_sub = torch.from_numpy(C_test_sub).to("cuda:0")
         C_test = torch.from_numpy(C_test).to("cuda:0")
 
         if args.concept_representation == "decision_tree":

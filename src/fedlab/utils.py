@@ -264,6 +264,7 @@ def evaluate_linear_concept(args, model, X, Y, concept_id):
 
             _, predicted = torch.max(outputs[concept_id+1], 1)
             loss_.update(loss.item())
+            acc_.update(torch.sum(predicted.eq(labels)).item(), len(labels))
             acc_0_.update(torch.sum(predicted[labels_0_idx].eq(labels[labels_0_idx])).item(), len(labels_0_idx))
             acc_1_.update(torch.sum(predicted[labels_1_idx].eq(labels[labels_1_idx])).item(), len(labels_1_idx))
     model.stop_probe_mode()
