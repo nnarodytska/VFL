@@ -76,6 +76,6 @@ python3  train.py  --total_client 10 --com_round 25 --sample_ratio 0.9 --batch_s
 3. to run personalization
 
 ```
-python3 personalize.py --config_info  ../../datasets/mnist/exps_shortcuts/config_<DATE>.json --personalization_steps_replay 50 --personalization_sim_weight 0.005 --concept_representation <decision_tree/linear>
+python3 personalize.py --config_info  ../../datasets/mnist/exps_shortcuts/config_<DATE>.json --personalization_steps_replay 50 --personalization_sim_weight 0.005 --concept_representation <decision_tree/linear> --concept_epochs 50
 ```
 

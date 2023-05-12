@@ -222,7 +222,7 @@ def learn_linear_concept(args, model, X, Y, concept_id):
     concept_dataloader = DataLoader(concept_dataset, batch_size=args.batch_size, shuffle=True)
     optimizer = torch.optim.SGD(model.concept_layers[concept_id].parameters(), args.lr)
     loss_fn = torch.nn.CrossEntropyLoss()
-    epochs = 3
+    epochs = args.concept_epochs
     model.train()
     model.start_probe_mode()
     for _ in range(epochs):
@@ -248,21 +248,26 @@ def evaluate_linear_concept(args, model, X, Y, concept_id):
 
     loss_ = AverageMeter()
     acc_ = AverageMeter()
+    acc_0_ = AverageMeter()
+    acc_1_ = AverageMeter()
 
     model.start_probe_mode()
     with torch.no_grad():
         for inputs, labels in concept_dataloader:
             inputs = inputs.to(gpu)
             labels = labels.to(gpu)
+            labels_0_idx = torch.nonzero(labels==0)
+            labels_1_idx = torch.nonzero(labels==1)
 
             outputs = model(inputs)
             loss = loss_fn(outputs[concept_id+1], labels)
 
             _, predicted = torch.max(outputs[concept_id+1], 1)
             loss_.update(loss.item())
-            acc_.update(torch.sum(predicted.eq(labels)).item(), len(labels))
+            acc_0_.update(torch.sum(predicted[labels_0_idx].eq(labels[labels_0_idx])).item(), len(labels_0_idx))
+            acc_1_.update(torch.sum(predicted[labels_1_idx].eq(labels[labels_1_idx])).item(), len(labels_1_idx))
     model.stop_probe_mode()
-    return loss_.sum, acc_.avg
+    return loss_.sum, acc_.avg, acc_0_.avg, acc_1_.avg
 
 def evaluate_linear_concepts(model, data_loader):
     """Evaluate concept representation accuracy.

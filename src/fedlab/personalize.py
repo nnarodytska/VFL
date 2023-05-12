@@ -112,8 +112,11 @@ def personalize():
         X_train, C_train = generate_concept_dataset(subsample_dataset, concept_to_class[concept],
                                                     subset_size=10000,
                                                     random_seed=42)
-        X_test, C_test = generate_concept_dataset(test_data, concept_to_class[concept],
+        X_test_sub, C_test_sub = generate_concept_dataset(test_data, concept_to_class[concept],
                                                     subset_size=1000,
+                                                    random_seed=42)
+        X_test, C_test = generate_concept_dataset(test_data, concept_to_class[concept],
+                                                    subset_size=10000,
                                                     random_seed=42)
 
         # Evaluate latent representation
@@ -140,10 +143,12 @@ def personalize():
 
         elif args.concept_representation == "linear":
             learn_linear_concept(args, handler.model, X_train, C_train, idx)
-            loss, acc = evaluate_linear_concept(args, handler.model, X_train, C_train, idx)
-            print(f'{concept} concept classifier loss {loss}, train accuracy {acc}')
-            loss, acc = evaluate_linear_concept(args, handler.model, X_test, C_test, idx)
-            print(f'{concept} concept classifier loss {loss}, test accuracy {acc}')
+            loss, acc, acc_0, acc_1 = evaluate_linear_concept(args, handler.model, X_train, C_train, idx)
+            print(f'{concept} concept classifier train loss {loss}, overall train accuracy {acc}, absence train accuracy {acc_0}, presence train accuracy {acc_1}')
+            loss, acc, acc_0, acc_1 = evaluate_linear_concept(args, handler.model, X_test_sub, C_test_sub, idx)
+            print(f'{concept} concept classifier test loss {loss}, test accuracy {acc} on subsampled, balanced test set, absence train accuracy {acc_0}, presence train accuracy {acc_1}')
+            loss, acc, acc_0, acc_1 = evaluate_linear_concept(args, handler.model, X_test, C_test, idx)
+            print(f'{concept} concept classifier loss {loss}, test accuracy {acc} on entire test set, absence train accuracy {acc_0}, presence train accuracy {acc_1}')
 
 
     standalone_eval.personalize(nb_rounds=args.personalization_steps_replay, save_path= args.models_path, 
