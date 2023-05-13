@@ -21,10 +21,9 @@ from setup import setup_args, setup_args_load
 from basic_client_modifed import SGDSerialClientTrainerExt
 from decision_tree import get_invariant, validate
 from utils import extract_testset, generate_concept_dataset, get_model, subsample_trainset, \
-    learn_linear_concept, evaluate_linear_concept
+    learn_linear_concept, evaluate_linear_concept, evaluate
 
 from fedlab.contrib.algorithm.basic_server import SyncServerHandler
-from fedlab.utils.functional import evaluate
 from torch import nn
 
 

@@ -1,9 +1,8 @@
 import os
-from fedlab.utils.functional import evaluate
 from fedlab.core.standalone import StandalonePipeline
 import torch
 from torch import nn
-from utils import evaluate_rules, evaluate_label_specific, plot_client_stats, evaluate_linear_concepts
+from utils import evaluate_rules, evaluate_label_specific, plot_client_stats, evaluate_linear_concepts, evaluate
 
 class EvalPipeline(StandalonePipeline):
     def __init__(self, handler, trainer, test_loader):

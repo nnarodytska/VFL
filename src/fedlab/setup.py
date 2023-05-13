@@ -35,7 +35,7 @@ def setup_args_load():
     if args.personalization_steps_replay is None:
         args.personalization_steps_replay = args.personalization_steps
     
-    # print(args)
+    print(args)
     # exit()
     return args
 

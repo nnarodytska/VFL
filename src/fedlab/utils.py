@@ -268,7 +268,7 @@ def evaluate_linear_concept(args, model, X, Y, concept_id):
             acc_0_.update(torch.sum(predicted[labels_0_idx].eq(labels[labels_0_idx])).item(), len(labels_0_idx))
             acc_1_.update(torch.sum(predicted[labels_1_idx].eq(labels[labels_1_idx])).item(), len(labels_1_idx))
     model.stop_probe_mode()
-    return loss_.sum, acc_.avg, acc_0_.avg, acc_1_.avg
+    return loss_.sum, acc_.sum/acc_.count, acc_0_.sum/acc_0_.count, acc_1_.sum/acc_1_.count
 
 def evaluate_linear_concepts(model, data_loader):
     """Evaluate concept representation accuracy.
@@ -299,3 +299,28 @@ def evaluate_linear_concepts(model, data_loader):
                 concept_present_cnt[concept_id] += torch.sum(predicted).item()
     model.stop_probe_mode()
     return concept_present_cnt
+
+def evaluate(model, criterion, test_loader):
+    """Evaluate classify task model accuracy.
+    
+    Returns:
+        (loss.sum, acc.avg)
+    """
+    model.eval()
+    gpu = next(model.parameters()).device
+
+    loss_ = AverageMeter()
+    acc_ = AverageMeter()
+    with torch.no_grad():
+        for inputs, labels in test_loader:
+            inputs = inputs.to(gpu)
+            labels = labels.to(gpu)
+
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+
+            _, predicted = torch.max(outputs, 1)
+            loss_.update(loss.item())
+            acc_.update(torch.sum(predicted.eq(labels)).item(), len(labels))
+
+    return loss_.sum, acc_.sum/acc_.count
