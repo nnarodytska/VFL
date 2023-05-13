@@ -66,8 +66,6 @@ def personalize():
     #########################
 
     trainer.setup_dataset(dataset)
-    trainer.setup_optim(args.epochs, args.batch_size, args.lr)
-
     # test_data = torchvision.datasets.MNIST(root="../../datasets/mnist/",
     #                                        train=False,
     #                                        transform=transforms.ToTensor())
@@ -152,6 +150,8 @@ def personalize():
             print(f'{concept} concept classifier loss {loss}, test accuracy {acc} on entire test set, absence train accuracy {acc_0}, presence train accuracy {acc_1}')
 
 
+    #setup_optim needs to be called after learn_linear_concept since the latter changes the requires_grad status of model parameters
+    trainer.setup_optim(args.epochs, args.batch_size, args.lr)
     standalone_eval.personalize(nb_rounds=args.personalization_steps_replay, save_path= args.models_path, 
                                 per_lr = args.personalization_lr, rules=rules, sim_weight=args.personalization_sim_weight, 
                                 save = False)

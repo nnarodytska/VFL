@@ -220,7 +220,18 @@ def plot_client_stats(client_stats,id,name):
 def learn_linear_concept(args, model, X, Y, concept_id):
     concept_dataset = torch.utils.data.TensorDataset(X,Y)
     concept_dataloader = DataLoader(concept_dataset, batch_size=args.batch_size, shuffle=True)
-    optimizer = torch.optim.SGD(model.concept_layers[concept_id].parameters(), args.lr)
+    for name, module in model.named_modules():
+        if module == model.concept_layers[concept_id]:
+            param_name = f'{name}.weight'
+            break
+    for name, param in model.named_parameters():
+        if name != param_name:
+            param.requires_grad = False
+        else:
+            param.requires_grad = True
+
+    # optimizer = torch.optim.SGD(model.concept_layers[concept_id].parameters(), args.lr)
+    optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), args.lr)
     loss_fn = torch.nn.CrossEntropyLoss()
     epochs = args.concept_epochs
     model.train()

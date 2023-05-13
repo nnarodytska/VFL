@@ -64,12 +64,24 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
         self.lr = lr
         params = []
         if self.concept_representation == "linear":
-            for layer in self._model.pred_layers:
-                params += list(layer.parameters())
+            layer_names = []
+            for name, module in self._model.named_modules():
+                if module in self._model.pred_layers:
+                    layer_names.append(name)
+            for name, param in self._model.named_parameters():
+                unfrozen_param_names = [f"{layer}.weight" for layer in layer_names] + [f"{layer}.bias" for layer in layer_names]
+                if name not in unfrozen_param_names:
+                    param.requires_grad = False
+                else:
+                    param.requires_grad = True
+
+            self.optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, self._model.parameters()), lr)
+            # for layer in self._model.pred_layers:
+            #     params += list(layer.parameters())
         else:
             params = self._model.parameters()
+            self.optimizer = torch.optim.SGD(params, lr)
 
-        self.optimizer = torch.optim.SGD(params, lr)
         self.criterion = torch.nn.CrossEntropyLoss()
 
     def train(self, model_parameters, train_loader):
