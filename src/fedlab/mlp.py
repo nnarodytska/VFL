@@ -100,6 +100,21 @@ class MicroMLP(nn.Module):
         self.fc3 = nn.Linear(10, output_size)
         self.relu = nn.ReLU()
 
+        self.concepts = ["Curvature", "Loop", "Vertical Line", "Horizontal Line"]
+        self.curvature_probe = nn.Linear(10, 2, bias=False)
+        self.loop_probe = nn.Linear(10, 2, bias=False)
+        self.vline_probe = nn.Linear(10, 2, bias=False)
+        self.hline_probe = nn.Linear(10, 2, bias=False)
+
+        self.concept_layers = [self.curvature_probe, self.loop_probe, self.vline_probe, self.hline_probe]
+        self.pred_layers = [self.fc1, self.fc2, self.fc3]
+
+    def start_probe_mode(self):
+        self.probe_mode = True
+
+    def stop_probe_mode(self):
+        self.probe_mode = False
+
     def input_to_representation(self, x):
         x = x.view(x.shape[0], -1)
         x = self.relu(self.fc1(x))
