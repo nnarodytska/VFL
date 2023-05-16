@@ -99,6 +99,8 @@ class MicroMLP(nn.Module):
         self.fc2 = nn.Linear(20, 10)
         self.fc3 = nn.Linear(10, output_size)
         self.relu = nn.ReLU()
+        self.probe_mode = False
+
 
         self.concepts = ["Curvature", "Loop", "Vertical Line", "Horizontal Line"]
         self.curvature_probe = nn.Linear(10, 2, bias=False)
@@ -125,8 +127,24 @@ class MicroMLP(nn.Module):
         x = x.view(x.shape[0], -1)
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
+        concept_outputs = []
+        concept_outputs.append(self.curvature_probe(x))
+        concept_outputs.append(self.loop_probe(x))
+        concept_outputs.append(self.vline_probe(x))
+        concept_outputs.append(self.hline_probe(x))
         x = self.fc3(x)
-        return x
+        if self.probe_mode:
+            return x, *concept_outputs
+        else:
+            return x
+
+    def probe(self, x):
+        x = x.view(x.shape[0], -1)
+        x = self.relu(self.fc1(x))
+        output = []
+        for concept_layer in self.concept_layers:
+            output.append(concept_layer(x))
+        return tuple(output)
 
 class NanoMLP(nn.Module):
     def __init__(self, input_size, output_size):
