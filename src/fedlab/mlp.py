@@ -78,6 +78,23 @@ class TinyMLP(nn.Module):
         self.fc3 = nn.Linear(20, 20)
         self.fc4 = nn.Linear(20, output_size)
         self.relu = nn.ReLU()
+
+        self.probe_mode = False
+        self.concepts = ["Curvature", "Loop", "Vertical Line", "Horizontal Line"]
+        self.curvature_probe = nn.Linear(20, 2, bias=False)
+        self.loop_probe = nn.Linear(20, 2, bias=False)
+        self.vline_probe = nn.Linear(20, 2, bias=False)
+        self.hline_probe = nn.Linear(20, 2, bias=False)
+        self.concept_layers = [self.curvature_probe, self.loop_probe, self.vline_probe, self.hline_probe]
+        self.pred_layers = [self.fc1, self.fc2, self.fc3, self.fc4]
+
+    def start_probe_mode(self):
+        self.probe_mode = True
+
+    def stop_probe_mode(self):
+        self.probe_mode = False
+
+
     def input_to_representation(self, x):
         x = x.view(x.shape[0], -1)
         x = self.relu(self.fc1(x))
@@ -88,9 +105,18 @@ class TinyMLP(nn.Module):
         x = x.view(x.shape[0], -1)
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
+        concept_outputs = []
+        concept_outputs.append(self.curvature_probe(x))
+        concept_outputs.append(self.loop_probe(x))
+        concept_outputs.append(self.vline_probe(x))
+        concept_outputs.append(self.hline_probe(x))
         x = self.relu(self.fc3(x))
         x = self.fc4(x)
-        return x
+
+        if self.probe_mode:
+            return x, *concept_outputs
+        else:
+            return x
 
 class MicroMLP(nn.Module):
     def __init__(self, input_size, output_size):
