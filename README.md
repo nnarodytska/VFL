@@ -79,3 +79,9 @@ python3  train.py  --total_client 10 --com_round 25 --sample_ratio 0.9 --batch_s
 python3 personalize.py --config_info  ../../datasets/mnist/exps_shortcuts/config_<DATE>.json --personalization_steps_replay 50 --personalization_sim_weight 0.005 --concept_representation <decision_tree/linear> --concept_epochs 50
 ```
 
+
+
+Some extra stuff (to remove later)
+```
+ python3 train.py --total_client 10 --com_round 25 --sample_ratio 0.9 --batch_size 256 --epochs 4 --lr 0.1 --major_classes_num 1 --personalization_steps 25 --augement_data_percent_per_class  0.001 --model micromlp
+```

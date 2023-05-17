@@ -11,11 +11,23 @@ def setup_args_load():
     parser.add_argument("--concept_epochs", type=int, default = 50)
     parser.add_argument("--personalization_sim_weight", type=float, default = 1.0)
     parser.add_argument("--concept_representation", type=str, default = None) # or "decision_tree" or "linear"
+    parser.add_argument("--active_layers",nargs="*", type=str, default =None)
+    parser.add_argument("--active_concepts",nargs="*", type=str, default = ["Curvature,Loop,Vertical Line,Horizontal Line"])
+
+
+
     args = parser.parse_args()
 
     with open(args.config_info) as f:
         configs = json.load(f)
     print(configs)
+    args.active_concepts = args.active_concepts[0].split(',')
+    print(args.active_layers)
+
+    if not (args.active_layers  is None):
+        args.active_layers = args.active_layers[0].split(',')
+        args.active_layers = [int(x) for x in  args.active_layers]
+
     print(f"reading from data config {configs['data_path']}")
     with open(configs['data_path']) as f:
         # Load the JSON data

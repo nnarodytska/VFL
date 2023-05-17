@@ -119,23 +119,38 @@ class TinyMLP(nn.Module):
             return x
 
 class MicroMLP(nn.Module):
-    def __init__(self, input_size, output_size):
+    def __init__(self, input_size, output_size, active_layers = None):
         super(MicroMLP, self).__init__()
-        self.fc1 = nn.Linear(input_size, 20)
-        self.fc2 = nn.Linear(20, 10)
-        self.fc3 = nn.Linear(10, output_size)
+        nb_hidden_1 = 20
+        nb_hidden_2 = 10
+        self.fc1 = nn.Linear(input_size, nb_hidden_1)
+        self.fc2 = nn.Linear(nb_hidden_1, nb_hidden_2)
+        self.fc3 = nn.Linear(nb_hidden_2, output_size)
         self.relu = nn.ReLU()
         self.probe_mode = False
 
 
-        self.concepts = ["Curvature", "Loop", "Vertical Line", "Horizontal Line"]
-        self.curvature_probe = nn.Linear(10, 2, bias=False)
-        self.loop_probe = nn.Linear(10, 2, bias=False)
-        self.vline_probe = nn.Linear(10, 2, bias=False)
-        self.hline_probe = nn.Linear(10, 2, bias=False)
+        self.concepts = ["Curvature", "Loop", "Vertical Line", "Horizontal Line", "Curvature", "Loop", "Vertical Line", "Horizontal Line"]
+        self.curvature_probe_h1 = nn.Linear(nb_hidden_1, 2, bias=True)
+        self.loop_probe_h1 = nn.Linear(nb_hidden_1, 2, bias=True)
+        self.vline_probe_h1 = nn.Linear(nb_hidden_1, 2, bias=True)
+        self.hline_probe_h1 = nn.Linear(nb_hidden_1, 2, bias=True)
 
-        self.concept_layers = [self.curvature_probe, self.loop_probe, self.vline_probe, self.hline_probe]
-        self.pred_layers = [self.fc1, self.fc2, self.fc3]
+        self.curvature_probe_h2 = nn.Linear(nb_hidden_2, 2, bias=True)
+        self.loop_probe_h2 = nn.Linear(nb_hidden_2, 2, bias=True)
+        self.vline_probe_h2 = nn.Linear(nb_hidden_2, 2, bias=True)
+        self.hline_probe_h2 = nn.Linear(nb_hidden_2, 2, bias=True)
+
+
+        self.concept_layers = [self.curvature_probe_h1, self.loop_probe_h1, self.vline_probe_h1, self.hline_probe_h1, self.curvature_probe_h2, self.loop_probe_h2, self.vline_probe_h2, self.hline_probe_h2]
+
+        self.all_layers = [self.fc1, self.fc2, self.fc3]
+
+        self.pred_layers = self.all_layers
+        if not(active_layers is None):   
+            self.pred_layers =  [ self.all_layers[i] for i in active_layers]
+        print( f"self.pred_layers {self.pred_layers}")
+
 
     def start_probe_mode(self):
         self.probe_mode = True
@@ -149,16 +164,31 @@ class MicroMLP(nn.Module):
         x = self.relu(self.fc2(x))
         return x
 
+
+
     def forward(self, x):
-        x = x.view(x.shape[0], -1)
-        x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
         concept_outputs = []
-        concept_outputs.append(self.curvature_probe(x))
-        concept_outputs.append(self.loop_probe(x))
-        concept_outputs.append(self.vline_probe(x))
-        concept_outputs.append(self.hline_probe(x))
+       
+        x = x.view(x.shape[0], -1)
+        x = self.fc1(x)
+        concept_outputs.append(self.curvature_probe_h1(x))
+        concept_outputs.append(self.loop_probe_h1(x))
+        concept_outputs.append(self.vline_probe_h1(x))
+        concept_outputs.append(self.hline_probe_h1(x))
+        x = self.relu(x)
+    
+        ############
+        x = self.fc2(x)       
+        concept_outputs.append(self.curvature_probe_h2(x))
+        concept_outputs.append(self.loop_probe_h2(x))
+        concept_outputs.append(self.vline_probe_h2(x))
+        concept_outputs.append(self.hline_probe_h2(x))
+        x = self.relu(x)
+
+        ##############
         x = self.fc3(x)
+
+        #print(f" self.probe_mode {self.probe_mode}")
         if self.probe_mode:
             return x, *concept_outputs
         else:
@@ -166,10 +196,19 @@ class MicroMLP(nn.Module):
 
     def probe(self, x):
         x = x.view(x.shape[0], -1)
-        x = self.relu(self.fc1(x))
+        ###########
+        x = self.fc1(x)
         output = []
-        for concept_layer in self.concept_layers:
+        for concept_layer in self.concept_layers[:4]:
             output.append(concept_layer(x))
+        x = self.relu(x)
+
+        ##############        
+        x = self.fc2(x)
+        for concept_layer in self.concept_layers[4:]:
+            output.append(concept_layer(x))
+        
+        
         return tuple(output)
 
 class NanoMLP(nn.Module):

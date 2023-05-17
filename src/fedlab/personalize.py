@@ -105,7 +105,7 @@ def personalize():
 
     # Load concept sets
     rules = []
-    for idx, concept in enumerate(["Curvature", "Loop", "Vertical Line", "Horizontal Line"]):
+    for idx, concept in enumerate(args.active_concepts):
         X_train, C_train = generate_concept_dataset(subsample_dataset, concept_to_class[concept],
                                                     subset_size=10000,
                                                     random_seed=42)
