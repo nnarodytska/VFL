@@ -143,11 +143,11 @@ def personalize():
         elif args.concept_representation == "linear":
             learn_linear_concept(args, handler.model, X_train, C_train, idx)
             loss, acc, acc_0, acc_1 = evaluate_linear_concept(args, handler.model, X_train, C_train, idx)
-            print(f'{concept} concept classifier train loss {loss}, overall train accuracy {acc}, absence train accuracy {acc_0}, presence train accuracy {acc_1}')
+            print(f'{concept} concept classifier train loss {loss:.2f}, overall train accuracy {acc:.2f}, \n \t\t absence train accuracy {acc_0:.2f}, presence train accuracy {acc_1:.2f}')
             loss, acc, acc_0, acc_1 = evaluate_linear_concept(args, handler.model, X_test_sub, C_test_sub, idx)
-            print(f'{concept} concept classifier test loss {loss}, test accuracy {acc} on subsampled, balanced test set, absence train accuracy {acc_0}, presence train accuracy {acc_1}')
+            print(f'{concept} concept classifier test loss  {loss:.2f}, test accuracy {acc:.2f} on subsampled, balanced test set,\n \t\t  absence train accuracy {acc_0:.2f}, presence train accuracy {acc_1:.2f}')
             loss, acc, acc_0, acc_1 = evaluate_linear_concept(args, handler.model, X_test, C_test, idx)
-            print(f'{concept} concept classifier loss {loss}, test accuracy {acc} on entire test set, absence train accuracy {acc_0}, presence train accuracy {acc_1}')
+            print(f'{concept} concept classifier loss       {loss:.2f}, test accuracy {acc:.2f} on entire test set,\n \t\t  absence train accuracy {acc_0:.2f}, presence train accuracy {acc_1:.2f}')
 
 
     #setup_optim needs to be called after learn_linear_concept since the latter changes the requires_grad status of model parameters
