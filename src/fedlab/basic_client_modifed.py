@@ -124,7 +124,7 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
                     if self.cuda:
                         data = data.cuda(self.device)
                         target = target.cuda(self.device)
-                    concept_outputs = self.global_model(data)[1:-1]
+                    concept_outputs = self.global_model(data)[1:]
                     concept_labels = []
                     for c_idx, concept_output in enumerate(concept_outputs):
                         concept_labels.append(torch.unsqueeze(torch.argmax(concept_output, dim=1), dim=-1))
@@ -176,7 +176,7 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
                             self._model.start_probe_mode()
                             output = self.model(data)
                             loss_base = self.criterion(output[0], target)
-                            concept_labels = output[1:-1]
+                            concept_labels = output[1:]
                             loss_concept = 0
                             for c_idx, concept_label in enumerate(concept_labels):
                                 loss_concept += self.criterion(concept_label, input_to_concept_labels[idx_strt:idx_strt+batch_size, c_idx])
