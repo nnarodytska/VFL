@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 from mlp import MLP, SmallMLP, TinyMLP, MicroMLP, NanoMLP
 from decision_tree import is_rule_sat, dist_to_rule
-
+from torchvision.utils import save_image
 SPECIAL_CASE_DATA_ZEROS_ONES = 100
 
 def get_model(args):
@@ -26,7 +26,10 @@ def get_model(args):
         return TinyMLP(784, 10).cuda()
     
     if args.model == "micromlp":
-        return MicroMLP(784, 10).cuda()
+        if  not hasattr(args, 'active_layers') or  args.active_layers is None:
+            return MicroMLP(784, 10).cuda()
+        else:
+            return MicroMLP(784, 10, active_layers=args.active_layers).cuda()
 
 
     if args.model == "nanomlp":
@@ -80,6 +83,7 @@ def generate_concept_dataset(dataset: Dataset, concept_classes: List[int], subse
                                                   sampler=SubsetRandomSampler(negative_idx))
     positive_images, positive_labels = next(iter(positive_loader))
     negative_images, negative_labels = next(iter(negative_loader))
+
     X = np.concatenate((positive_images.cpu().numpy(), negative_images.cpu().numpy()), 0)
     y = np.concatenate((np.ones(len(positive_images), dtype=np.int64), np.zeros(len(negative_images), dtype=np.int64)), 0)
     np.random.seed(random_seed)
@@ -221,15 +225,18 @@ def learn_linear_concept(args, model, X, Y, concept_id):
     concept_dataset = torch.utils.data.TensorDataset(X,Y)
     concept_dataloader = DataLoader(concept_dataset, batch_size=args.batch_size, shuffle=True)
     for name, module in model.named_modules():
+        #print( name, module,  model.concept_layers[concept_id], concept_id,  module == model.concept_layers[concept_id])
         if module == model.concept_layers[concept_id]:
-            param_name = f'{name}.weight'
+            param_name_weight = f'{name}.weight'
+            param_name_bias = f'{name}.bias'
+            param_name = [param_name_weight, param_name_bias]
+
             break
     for name, param in model.named_parameters():
-        if name != param_name:
+        if not(name in param_name):
             param.requires_grad = False
         else:
             param.requires_grad = True
-
     # optimizer = torch.optim.SGD(model.concept_layers[concept_id].parameters(), args.lr)
     optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), args.lr)
     loss_fn = torch.nn.CrossEntropyLoss()
