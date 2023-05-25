@@ -38,9 +38,9 @@ class EvalPipeline(StandalonePipeline):
         def print_statistics(stats):
             for k,v in stats.items():
                 if isinstance(v, collections.abc.Sequence):
-                    print(f"\t{k: <35}: {[round(w,2) for w in v]}")
+                    print(f"\t{k: <45}: {[round(w,2) for w in v]}")
                 else:
-                    print(f"\t{k: <35}: {[round(v,2)]}")
+                    print(f"\t{k: <45}: {[round(v,2)]}")
         
         self.trainer.setup_lr(per_lr/10)
         self.trainer.setup_rules(rules)
