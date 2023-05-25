@@ -83,7 +83,6 @@ def generate_concept_dataset(dataset: Dataset, concept_classes: List[int], subse
                                                   sampler=SubsetRandomSampler(negative_idx))
     positive_images, positive_labels = next(iter(positive_loader))
     negative_images, negative_labels = next(iter(negative_loader))
-
     X = np.concatenate((positive_images.cpu().numpy(), negative_images.cpu().numpy()), 0)
     y = np.concatenate((np.ones(len(positive_images), dtype=np.int64), np.zeros(len(negative_images), dtype=np.int64)), 0)
     np.random.seed(random_seed)
@@ -237,8 +236,9 @@ def learn_linear_concept(args, model, X, Y, concept_id):
             param.requires_grad = False
         else:
             param.requires_grad = True
+
     # optimizer = torch.optim.SGD(model.concept_layers[concept_id].parameters(), args.lr)
-    optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), args.lr)
+    optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), args.concept_lr)
     loss_fn = torch.nn.CrossEntropyLoss()
     epochs = args.concept_epochs
     model.train()

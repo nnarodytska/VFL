@@ -3,6 +3,7 @@ from fedlab.core.standalone import StandalonePipeline
 import torch
 from torch import nn
 from utils import evaluate_rules, evaluate_label_specific, plot_client_stats, evaluate_linear_concepts, evaluate
+import collections.abc
 
 class EvalPipeline(StandalonePipeline):
     def __init__(self, handler, trainer, test_loader):
@@ -34,6 +35,13 @@ class EvalPipeline(StandalonePipeline):
 
 
     def personalize(self, nb_rounds, save_path, per_lr, rules=None, sim_weight = 1, save= True, debug = 0):
+        def print_statistics(stats):
+            for k,v in stats.items():
+                if isinstance(v, collections.abc.Sequence):
+                    print(f"\t{k: <35}: {[round(w,2) for w in v]}")
+                else:
+                    print(f"\t{k: <35}: {[round(v,2)]}")
+        
         self.trainer.setup_lr(per_lr/10)
         self.trainer.setup_rules(rules)
         self.trainer.setup_sim_weight(sim_weight)
@@ -81,7 +89,7 @@ class EvalPipeline(StandalonePipeline):
                 client_stats_pre_personalization[client]["concepts_local"] = [float(cnt) / len(data_loader.dataset) for cnt in concept_present_count]
                 concept_present_count = evaluate_linear_concepts(self.handler.model, self.test_loader)
                 client_stats_pre_personalization[client]["concepts_global"] = [float(cnt) / len(self.test_loader.dataset) for cnt in concept_present_count]
-      
+
         original_epoch = self.trainer.epochs
         self.trainer.epochs  = 100
         self.trainer.personalization = True
@@ -128,13 +136,16 @@ class EvalPipeline(StandalonePipeline):
       
             if save: self.save_model(save_path, model = self.trainer._model, name = f"client_{client}")
             
+
         print("\nBefore personalization results:")
         for id, client in enumerate(clients):
-            print(f'Client {client}: ', client_stats_pre_personalization[client])
+            print(f'Client {client:<2}: ')
+            print_statistics(client_stats_pre_personalization[client])
             plot_client_stats(client_stats_pre_personalization[client], id, "pre")
         print("\nAfter personalization results:")
         for id, client in enumerate(clients):
-            print(f'Client {client}: ', client_stats_post_personalization[client])
+            print(f'Client {client:<2}: ')
+            print_statistics(client_stats_post_personalization[client])
             plot_client_stats(client_stats_post_personalization[client], id, "post")
 
 
