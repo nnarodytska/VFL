@@ -14,7 +14,7 @@ def setup_args_load():
     parser.add_argument("--concept_representation", type=str, default = None) # or "decision_tree" or "linear"
     parser.add_argument("--active_layers",nargs="*", type=str, default =None)
     parser.add_argument("--active_concepts",nargs="*", type=str, default = ["Curvature,Loop,Vertical Line,Horizontal Line"])
-
+    parser.add_argument("--personalization_lr", type=float, default = None)
 
 
     args = parser.parse_args()
@@ -34,6 +34,8 @@ def setup_args_load():
         # Load the JSON data
         data = json.load(f)
         for k,v in  data.items():
+            if k == "personalization_lr" and  not (args.personalization_lr is None):
+                continue
             setattr(args, k, v)
 
     print(f"reading from model config {configs['models_path']}")
@@ -42,6 +44,7 @@ def setup_args_load():
         data = json.load(f)
         for k,v in  data.items():
             setattr(args, k, v)
+
     if args.personalization_lr is None:
         args.personalization_lr = args.lr/5
 
@@ -77,7 +80,7 @@ def setup_args():
     parser.add_argument("--partition", type=str, default ="noniid-#label")
     parser.add_argument("--root_path", type=str, default ='../../datasets/mnist/')
     parser.add_argument("--personalization_steps", type=int, default = 25)
-    parser.add_argument("--personalization_lr", type=int, default = None)
+    parser.add_argument("--personalization_lr", type=float, default = None)
     
     parser.add_argument("--special_data", type=int, default = None)
 
