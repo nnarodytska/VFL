@@ -89,6 +89,7 @@ class EvalPipeline(StandalonePipeline):
                 concept_present_count = evaluate_linear_concepts(self.handler.model, self.test_loader)
                 client_stats_pre_personalization[client]["concepts_global"] = [float(cnt) / len(self.test_loader.dataset) for cnt in concept_present_count]
 
+        
         original_epoch = self.trainer.epochs
         self.trainer.epochs  = 100
         self.trainer.personalization = True

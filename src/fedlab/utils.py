@@ -9,6 +9,7 @@ from typing import List, Tuple, Dict
 from pathlib import Path
 from fedlab.utils.functional import AverageMeter
 import matplotlib.pyplot as plt
+from setup import DEBUG100
 
 from mlp import MLP, SmallMLP, TinyMLP, MicroMLP, NanoMLP
 from decision_tree import is_rule_sat, dist_to_rule
@@ -223,19 +224,18 @@ def plot_client_stats(client_stats,id,name):
 def learn_linear_concept(args, model, X, Y, concept_id):
     concept_dataset = torch.utils.data.TensorDataset(X,Y)
     concept_dataloader = DataLoader(concept_dataset, batch_size=args.batch_size, shuffle=True)
-    for name, module in model.named_modules():
-        #print( name, module,  model.concept_layers[concept_id], concept_id,  module == model.concept_layers[concept_id])
-        if module == model.concept_layers[concept_id]:
-            param_name_weight = f'{name}.weight'
-            param_name_bias = f'{name}.bias'
-            param_name = [param_name_weight, param_name_bias]
-
-            break
     for name, param in model.named_parameters():
-        if not(name in param_name):
-            param.requires_grad = False
-        else:
-            param.requires_grad = True
+        #print(f"{name}, {param.requires_grad}, {param}")
+        param.requires_grad = False
+
+    for name, module in model.named_modules():
+        #print( "~~~~~", name, module,  module == model.concept_layers[concept_id])
+        if module == model.concept_layers[concept_id]:
+            for pname, params in module.named_parameters():
+                params.requires_grad = True
+                if DEBUG100 == 1: print(f"grad on {name}-{pname}")
+                #print(params,  params.requires_grad )
+
 
     # optimizer = torch.optim.SGD(model.concept_layers[concept_id].parameters(), args.lr)
     optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), args.concept_lr)

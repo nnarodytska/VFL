@@ -1,4 +1,5 @@
 from fedlab.contrib.algorithm.basic_client import SGDSerialClientTrainer
+from setup import DEBUG100
 from utils import map_inputs_to_rules, calculate_dist_to_rule, calculate_similarity_loss
 
 import torch.nn as nn
@@ -64,17 +65,20 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
         self.lr = lr
         params = []
         if self.concept_representation == "linear":
-            layer_names = []
+            #layer_names = []
+
+            for name, param in self._model.named_parameters():
+                #print(f"{name}, {param.requires_grad}, {param}")
+                param.requires_grad = False
             for name, module in self._model.named_modules():
                 if module in self._model.pred_layers:
-                    layer_names.append(name)
-            for name, param in self._model.named_parameters():
-                unfrozen_param_names = [f"{layer}.weight" for layer in layer_names] + [f"{layer}.bias" for layer in layer_names]
-                if name not in unfrozen_param_names:
-                    param.requires_grad = False
-                else:
-                    param.requires_grad = True
+                    #print(f"~~~~~~~~~{module}~~~~~~~~~~~~~~~")
+                    for pname, param in module.named_parameters():
+                        param.requires_grad = True
+                        if DEBUG100 == 1: print(f"setup_optim: grad on {name}-{pname}")
 
+
+            if DEBUG100 == 1: print(f"personalization lr = {lr}")
             self.optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, self._model.parameters()), lr)
             # for layer in self._model.pred_layers:
             #     params += list(layer.parameters())

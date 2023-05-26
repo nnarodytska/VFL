@@ -2,7 +2,7 @@
 import argparse
 import json
 
-
+DEBUG100 =  False
 def setup_args_load():
     # configuration
     parser = argparse.ArgumentParser(description="Standalone training example")

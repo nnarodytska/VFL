@@ -1,12 +1,10 @@
 
 import torch.nn as nn
 
-class LinearLayer(nn.Module):
-    """Used for celeba experiment"""
-
-    def __init__(self, input_dim, output_dim):
-        super(LinearLayer, self).__init__()
-        self.fc = nn.Linear(input_dim, output_dim)  # image_size=64, 64*64*3
+class LinearLayerConcept(nn.Module):
+    def __init__(self, input_dim, output_dim, bias = True):
+        super(LinearLayerConcept, self).__init__()
+        self.fc = nn.Linear(input_dim, output_dim)  
      
 
     def forward(self, x):
@@ -14,6 +12,20 @@ class LinearLayer(nn.Module):
         x = self.fc(x)
         return x
 
+class SmallLayerConcept(nn.Module):
+    def __init__(self, input_dim, output_dim, bias = True):
+        super(SmallLayerConcept, self).__init__()
+        self.relu = nn.ReLU()
+        self.fc1 = nn.Linear(input_dim, 10)  
+        self.fc2 = nn.Linear(10, output_dim)  
+     
+
+    def forward(self, x):
+        x = x.view(x.shape[0], -1)
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)        
+        return x
 
 class MLP_CelebA(nn.Module):
     """Used for celeba experiment"""
@@ -123,10 +135,10 @@ class MicroMLP(nn.Module):
         # self.vline_probe_h1 = nn.Linear(nb_hidden_1, 2, bias=True)
         # self.hline_probe_h1 = nn.Linear(nb_hidden_1, 2, bias=True)
 
-        self.curvature_probe_h2 = nn.Linear(nb_hidden_2, 2, bias=True)
-        self.loop_probe_h2 = nn.Linear(nb_hidden_2, 2, bias=True)
-        self.vline_probe_h2 = nn.Linear(nb_hidden_2, 2, bias=True)
-        self.hline_probe_h2 = nn.Linear(nb_hidden_2, 2, bias=True)
+        self.curvature_probe_h2 = SmallLayerConcept(nb_hidden_2, 2, bias=True)
+        self.loop_probe_h2  = SmallLayerConcept(nb_hidden_2, 2, bias=True)
+        self.vline_probe_h2 =SmallLayerConcept(nb_hidden_2, 2, bias=True)
+        self.hline_probe_h2 =SmallLayerConcept(nb_hidden_2, 2, bias=True)
 
 
         self.concept_layers = [self.curvature_probe_h2, self.loop_probe_h2, self.vline_probe_h2, self.hline_probe_h2]

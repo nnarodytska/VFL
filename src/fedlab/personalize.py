@@ -143,17 +143,17 @@ def personalize():
         elif args.concept_representation == "linear":
             learn_linear_concept(args, handler.model, X_train, C_train, idx)
             loss, acc, acc_0, acc_1 = evaluate_linear_concept(args, handler.model, X_train, C_train, idx)
-            print(f'{concept} concept classifier train loss {loss:.2f}, overall train accuracy {acc:.2f}, \n \t\t absence train accuracy {acc_0:.2f}, presence train accuracy {acc_1:.2f}')
+            # {"concept classifier train loss":<45} {loss:.2f}, 
+            print(f'{concept:<20} train accuracy {acc:.2f} on entire test set,              absence train accuracy {acc_0:.2f}, presence train accuracy {acc_1:.2f}')
             loss, acc, acc_0, acc_1 = evaluate_linear_concept(args, handler.model, X_test_sub, C_test_sub, idx)
-            print(f'{concept} concept classifier test loss  {loss:.2f}, test accuracy {acc:.2f} on subsampled, balanced test set,\n \t\t absence train accuracy {acc_0:.2f}, presence train accuracy {acc_1:.2f}')
+            print(f'{concept:<20} test accuracy  {acc:.2f} on subsampled, balanced test set, absence test  accuracy {acc_0:.2f}, presence test  accuracy {acc_1:.2f}')
             loss, acc, acc_0, acc_1 = evaluate_linear_concept(args, handler.model, X_test, C_test, idx)
-            print(f'{concept} concept classifier loss       {loss:.2f}, test accuracy {acc:.2f} on entire test set,\n \t\t absence train accuracy {acc_0:.2f}, presence train accuracy {acc_1:.2f}')
+            print(f'{concept:<20} test accuracy  {acc:.2f} on entire test set,               absence test  accuracy {acc_0:.2f}, presence test  accuracy {acc_1:.2f}')
 
 
     #setup_optim needs to be called after learn_linear_concept since the latter changes the requires_grad status of model parameters
-    trainer.setup_optim(args.epochs, args.batch_size, args.personalization_lr)
-    standalone_eval.personalize(nb_rounds=args.personalization_steps_replay, save_path= args.models_path, 
-                                per_lr = args.personalization_lr, rules=rules, sim_weight=args.personalization_sim_weight, 
+    trainer.setup_optim(args.epochs, args.batch_size, args.personalization_lr/10)
+    standalone_eval.personalize(nb_rounds=args.personalization_steps_replay, save_path= args.models_path,  rules=rules, sim_weight=args.personalization_sim_weight, 
                                 save = False)
 
 
