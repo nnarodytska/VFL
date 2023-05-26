@@ -19,13 +19,13 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
     def ok(self):
         print("ok")
 
-    def setup_lr(self,  lr):
-        """Set up local optimization configuration.
+    # def setup_lr(self,  lr):
+    #     """Set up local optimization configuration.
 
-        Args:
-            lr (float): Learning rate.
-        """
-        self.optimizer = torch.optim.SGD(self._model.parameters(), lr)
+    #     Args:
+    #         lr (float): Learning rate.
+    #     """
+    #     self.optimizer = torch.optim.SGD(self._model.parameters(), lr)
 
     def setup_rules(self, rules):
         """Set up rules that are to be maintained.

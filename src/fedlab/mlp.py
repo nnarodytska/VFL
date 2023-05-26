@@ -1,6 +1,19 @@
 
 import torch.nn as nn
 
+class LinearLayer(nn.Module):
+    """Used for celeba experiment"""
+
+    def __init__(self, input_dim, output_dim):
+        super(LinearLayer, self).__init__()
+        self.fc = nn.Linear(input_dim, output_dim)  # image_size=64, 64*64*3
+     
+
+    def forward(self, x):
+        x = x.view(x.shape[0], -1)
+        x = self.fc(x)
+        return x
+
 
 class MLP_CelebA(nn.Module):
     """Used for celeba experiment"""

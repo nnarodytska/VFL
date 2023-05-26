@@ -70,8 +70,8 @@ test_loader = DataLoader(test_data, batch_size =  args.batch_size)
 standalone_eval = EvalPipeline(handler=handler, trainer=trainer, test_loader=test_loader)
 standalone_eval.main()
 
-standalone_eval.personalize(nb_rounds=args.personalization_steps, save_path= args.models_path, 
-                            per_lr = args.personalization_lr, save = True)
+trainer.setup_optim(args.epochs, args.batch_size, args.lr/10)
+standalone_eval.personalize(nb_rounds=args.personalization_steps, save_path= args.models_path,  save = True)
 
 jfile = os.path.join(args.data_path, 'config_data.json')
 with open(jfile, 'w') as fp:

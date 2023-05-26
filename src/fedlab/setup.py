@@ -9,7 +9,7 @@ def setup_args_load():
     parser.add_argument("--config_info", type=str)
     parser.add_argument("--personalization_steps_replay", type=int, default = None)
     parser.add_argument("--concept_epochs", type=int, default = 50)
-    parser.add_argument("--concept_lr", type=float, default = 0.1)
+    parser.add_argument("--concept_lr", type=float, default = None)
     parser.add_argument("--personalization_sim_weight", type=float, default = 1.0)
     parser.add_argument("--concept_representation", type=str, default = None) # or "decision_tree" or "linear"
     parser.add_argument("--active_layers",nargs="*", type=str, default =None)
@@ -48,6 +48,8 @@ def setup_args_load():
     if args.personalization_steps_replay is None:
         args.personalization_steps_replay = args.personalization_steps
     
+    if args.concept_lr is None:
+        args.concept_lr = args.lr
     print(args)
     # exit()
     return args
