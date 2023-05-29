@@ -78,13 +78,14 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
                         if DEBUG100 == 1: print(f"setup_optim: grad on {name}-{pname}")
 
 
-            if DEBUG100 == 1: print(f"personalization lr = {lr}")
             self.optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, self._model.parameters()), lr)
             # for layer in self._model.pred_layers:
             #     params += list(layer.parameters())
         else:
             params = self._model.parameters()
             self.optimizer = torch.optim.SGD(params, lr)
+
+        if DEBUG100 == 1 or True: print(f"personalization lr = {lr}")
 
         self.criterion = torch.nn.CrossEntropyLoss()
 
@@ -155,7 +156,7 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
                         #exit()
                         return [self.model_parameters]
                     else:
-                        if self.concept_representation == None:
+                        if self.concept_representation in [None, "eval_linear"]:
                             output = self.model(data)
                             loss_base = self.criterion(output, target)
                             loss = loss_base

@@ -35,12 +35,12 @@ class EvalPipeline(StandalonePipeline):
 
 
     def personalize(self, nb_rounds, save_path, rules=None, sim_weight = 1, save= True, debug = 0):
-        def print_statistics(stats):
+        def print_statistics(stats, prefix = ""):
             for k,v in stats.items():
                 if isinstance(v, collections.abc.Sequence):
-                    print(f"\t{k: <45}: {[round(w,2) for w in v]}")
+                    print(f"{prefix}\t{k: <45}: {[round(w,2) for w in v]}")
                 else:
-                    print(f"\t{k: <45}: {[round(v,2)]}")
+                    print(f"{prefix}\t{k: <45}: {[round(v,2)]}")
         
         self.trainer.setup_rules(rules)
         self.trainer.setup_sim_weight(sim_weight)
@@ -83,7 +83,7 @@ class EvalPipeline(StandalonePipeline):
                 # print(f'before personalization: client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]}')
                 client_stats_pre_personalization[client]["rules_global"] = [float(cnt) / len(self.test_loader.dataset) for cnt in rule_sat_cnt]
             
-            if self.trainer.concept_representation == "linear":
+            if self.trainer.concept_representation in ["linear", "eval_linear"]:
                 concept_present_count = evaluate_linear_concepts(self.handler.model, data_loader)
                 client_stats_pre_personalization[client]["concepts_local"] = [float(cnt) / len(data_loader.dataset) for cnt in concept_present_count]
                 concept_present_count = evaluate_linear_concepts(self.handler.model, self.test_loader)
@@ -128,7 +128,7 @@ class EvalPipeline(StandalonePipeline):
                 #       client {client}: % of inputs satisfying rules {[float(cnt) / len(data_loader.dataset) for cnt in rule_sat_cnt]} (from {client_stats_pre_personalization[client]["rules"] })')
                 client_stats_post_personalization[client]["rules_global"] = [float(cnt) / len(self.test_loader.dataset) for cnt in rule_sat_cnt]
             
-            if self.trainer.concept_representation == "linear":
+            if self.trainer.concept_representation in ["linear", "eval_linear"]:
                 concept_present_count = evaluate_linear_concepts(self.trainer._model, data_loader)
                 client_stats_post_personalization[client]["concepts_local"] = [float(cnt) / len(data_loader.dataset) for cnt in concept_present_count]
                 concept_present_count = evaluate_linear_concepts(self.trainer._model, self.test_loader)
@@ -139,13 +139,19 @@ class EvalPipeline(StandalonePipeline):
 
         print("\nBefore personalization results:")
         for id, client in enumerate(clients):
-            print(f'Client {client:<2}: ')
-            print_statistics(client_stats_pre_personalization[client])
+            prefix = f'Client {client:<2}: '
+            print(prefix)
+            prefix = f'     B:{client:<2}: '
+
+            print_statistics(client_stats_pre_personalization[client], prefix=prefix)
             plot_client_stats(client_stats_pre_personalization[client], id, "pre")
         print("\nAfter personalization results:")
         for id, client in enumerate(clients):
-            print(f'Client {client:<2}: ')
-            print_statistics(client_stats_post_personalization[client])
+            prefix = f'Client {client:<2}: '
+            print(prefix)
+            prefix = f'     A:{client:<2}: '
+
+            print_statistics(client_stats_post_personalization[client], prefix = prefix)
             plot_client_stats(client_stats_post_personalization[client], id, "post")
 
 

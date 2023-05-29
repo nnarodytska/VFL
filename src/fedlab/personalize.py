@@ -140,7 +140,7 @@ def personalize():
             rules.append((True, invariants[True][0][0], invariants[True][0][1]))
             rules.append((False, invariants[False][0][0], invariants[False][0][1]))
 
-        elif args.concept_representation == "linear":
+        elif args.concept_representation in ["linear", "eval_linear"]:
             learn_linear_concept(args, handler.model, X_train, C_train, idx)
             loss, acc, acc_0, acc_1 = evaluate_linear_concept(args, handler.model, X_train, C_train, idx)
             # {"concept classifier train loss":<45} {loss:.2f}, 
@@ -152,7 +152,7 @@ def personalize():
 
 
     #setup_optim needs to be called after learn_linear_concept since the latter changes the requires_grad status of model parameters
-    trainer.setup_optim(args.epochs, args.batch_size, args.personalization_lr/10)
+    trainer.setup_optim(args.epochs, args.batch_size, args.personalization_lr)
     standalone_eval.personalize(nb_rounds=args.personalization_steps_replay, save_path= args.models_path,  rules=rules, sim_weight=args.personalization_sim_weight, 
                                 save = False)
 
