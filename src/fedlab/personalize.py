@@ -141,7 +141,7 @@ def personalize():
             rules.append((True, invariants[True][0][0], invariants[True][0][1]))
             rules.append((False, invariants[False][0][0], invariants[False][0][1]))
 
-        elif args.concept_representation in ["linear", "eval_linear"]:
+        elif args.concept_representation == "linear":
             learn_linear_concept(args, handler.model, X_train, C_train, idx)
             loss, acc, acc_0, acc_1 = evaluate_linear_concept(args, handler.model, X_train, C_train, idx)
             # {"concept classifier train loss":<45} {loss:.2f}, 

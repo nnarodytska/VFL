@@ -158,7 +158,7 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
                         #exit()
                         return [self.model_parameters]
                     else:
-                        if self.concept_representation in [None, "eval_linear"]:
+                        if self.concept_representation is None:
                             output = self.model(data)
                             loss_base = self.criterion(output, target)
                             loss = loss_base

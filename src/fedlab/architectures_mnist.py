@@ -195,8 +195,6 @@ class MicroMLP(nn.Module):
         self.relu = nn.ReLU()
         self.probe_mode = False
 
-
-        self.concepts = ["Curvature", "Loop", "Vertical Line", "Horizontal Line", "Curvature", "Loop", "Vertical Line", "Horizontal Line"]
         # self.curvature_probe_h1 = nn.Linear(nb_hidden_1, 2, bias=True)
         # self.loop_probe_h1 = nn.Linear(nb_hidden_1, 2, bias=True)
         # self.vline_probe_h1 = nn.Linear(nb_hidden_1, 2, bias=True)
@@ -256,21 +254,6 @@ class MicroMLP(nn.Module):
         else:
             return x
 
-    def probe(self, x):
-        x = x.view(x.shape[0], -1)
-        ###########
-        x = self.fc1(x)
-        output = []
-        x = self.relu(x)
-
-        ##############        
-        x = self.fc2(x)
-        for concept_layer in self.concept_layers[4:]:
-            output.append(concept_layer(x))
-        
-        
-        return tuple(output)
-
 class NanoMLP(nn.Module):
     def __init__(self, input_size, output_size):
         super(NanoMLP, self).__init__()
@@ -279,7 +262,6 @@ class NanoMLP(nn.Module):
         self.fc2 = nn.Linear(20, output_size)
         self.relu = nn.ReLU()
         
-        self.concepts = ["Curvature", "Loop", "Vertical Line", "Horizontal Line"]
         self.curvature_probe = nn.Linear(20, 2, bias=False)
         self.loop_probe = nn.Linear(20, 2, bias=False)
         self.vline_probe = nn.Linear(20, 2, bias=False)
@@ -312,12 +294,3 @@ class NanoMLP(nn.Module):
             return x, *concept_outputs
         else:
             return x
-    
-    def probe(self, x):
-        x = x.view(x.shape[0], -1)
-        x = self.relu(self.fc1(x))
-        output = []
-        for concept_layer in self.concept_layers:
-            output.append(concept_layer(x))
-        return tuple(output)
-

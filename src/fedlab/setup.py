@@ -22,12 +22,14 @@ def setup_args_load():
     with open(args.config_info) as f:
         configs = json.load(f)
     print(configs)
+    
     args.active_concepts = args.active_concepts[0].split(',')
-    print(args.active_layers)
+    print("Active concepts: ", args.active_concepts)
 
     if not (args.active_layers  is None):
         args.active_layers = args.active_layers[0].split(',')
         args.active_layers = [int(x) for x in  args.active_layers]
+        print("Active layers: ", args.active_layers)
 
     print(f"reading from data config {configs['data_path']}")
     with open(configs['data_path']) as f:
