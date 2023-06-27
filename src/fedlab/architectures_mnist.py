@@ -4,6 +4,10 @@ from utils import get_device
 
 def get_mnist_model(args):
     device = get_device(args.cuda, args.device)
+
+    if args.model == "real":
+        return ClassifierMnist(784).to(device)
+
     if args.model == "mlp":
         return MLP(784, 10).to(device)
 
@@ -50,28 +54,65 @@ class SmallLayerConcept(nn.Module):
         x = self.relu(x)
         x = self.fc3(x)   
         return x
-    
 
-class MLP_CelebA(nn.Module):
-    """Used for celeba experiment"""
-
-    def __init__(self):
-        super(MLP_CelebA, self).__init__()
-        self.fc1 = nn.Linear(12288, 2048)  # image_size=64, 64*64*3
-        self.relu1 = nn.ReLU()
-        self.fc2 = nn.Linear(2048, 500)
-        self.relu2 = nn.ReLU()
-        self.fc3 = nn.Linear(500, 100)
-        self.relu3 = nn.ReLU()
-        self.fc4 = nn.Linear(100, 2)
+class ClassifierMnist(nn.Module):
+    def __init__(self, latent_dim: int, name: str = "model"):
+        super(ClassifierMnist, self).__init__()
+        self.latent_dim = latent_dim
+        self.name = name
+        self.checkpoints_files = []
+        self.cnn1 = nn.Conv2d(
+            in_channels=1, out_channels=16, kernel_size=5, stride=1, padding=0
+        )
+        self.cnn2 = nn.Conv2d(
+            in_channels=16, out_channels=32, kernel_size=5, stride=1, padding=0
+        )
+        self.relu = nn.ReLU()
+        self.maxpool1 = nn.MaxPool2d(2, 2)
+        self.maxpool2 = nn.MaxPool2d(2, 2)
+        self.dropout = nn.Dropout(p=0.2)
+        self.dropout2d = nn.Dropout2d(p=0.2)
+        self.fc1 = nn.Linear(32 * 4 * 4, 2 * self.latent_dim)
+        self.fc2 = nn.Linear(2 * self.latent_dim, self.latent_dim)
+        self.out = nn.Linear(self.latent_dim, 10)
+        self.criterion = nn.CrossEntropyLoss()
 
     def forward(self, x):
-        x = x.view(x.shape[0], -1)
-        x = self.relu1(self.fc1(x))
-        x = self.relu2(self.fc2(x))
-        x = self.relu3(self.fc3(x))
-        x = self.fc4(x)
+        x = self.cnn1(x)
+        x = self.relu(x)
+        x = self.dropout2d(x)
+        x = self.maxpool1(x)
+        x = self.cnn2(x)
+        x = self.relu(x)
+        x = self.dropout2d(x)
+        x = self.maxpool2(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc1(x)
+        x = self.dropout(x)
+        x = self.fc2(x)
+        x = self.dropout(x)
+        x = self.out(x)
         return x
+
+    def input_to_representation(self, x):
+        x = self.cnn1(x)
+        x = self.relu(x)
+        x = self.dropout2d(x)
+        x = self.maxpool1(x)
+        x = self.cnn2(x)
+        x = self.relu(x)
+        x = self.dropout2d(x)
+        x = self.maxpool2(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc1(x)
+        return x
+
+    def representation_to_output(self, h):
+        h = self.dropout(h)
+        h = self.fc2(h)
+        h = self.dropout(h)
+        h = self.out(h)
+        return h
 
 
 class MLP(nn.Module):

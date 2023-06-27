@@ -5,9 +5,9 @@ The repository currently supports concept representations in the form of decisio
 
 
 ## Pre-requisites
-The repository uses PyTorch and the `fedlab` package. Install `fedlab` as follows:
+The repository uses PyTorch, `fedlab`, `scikit-learn`, and `imblearn` packages. After installing PyTorch, setup the remaining packages as follows:
 ```
-pip3 install fedlab
+pip3 install fedlab imblearn
 ```
 
 ## Running the code
@@ -26,7 +26,7 @@ To personalize the global model, run the following commands (starting from the r
 ```
 cd src/fedlab/
 
-python3 personalize.py --config_info  ../../datasets/mnist/exps_shortcuts/config_<DATE>.json --personalization_steps_replay 25 --personalization_sim_weight 5  --concept_epochs 50 --active_layers=2  --active_concepts=Curvature,Loop,'Vertical Line','Horizontal Line',Curvature,Loop,'Vertical Line','Horizontal Line' --concept_representation linear
+python3 personalize.py --config_info  ../../datasets/mnist/exps_shortcuts/config_<DATE>.json --personalization_steps_replay 25 --personalization_sim_weight 5  --concept_epochs 50 --active_layers=2  --active_concepts=Curvature,Loop,'Vertical Line','Horizontal Line' --concept_representation linear
 ```
 
 The details about the options passed to `train.py` and `personalize.py` are available in the file `setup.py`.

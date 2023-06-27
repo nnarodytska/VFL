@@ -1,19 +1,33 @@
 import random
 import torch
 import numpy as np
-from torchvision.datasets import MNIST
-from torchvision import transforms
-from torch.utils.data.sampler import SubsetRandomSampler
-from torch.utils.data import DataLoader, Dataset, BatchSampler
-from typing import List, Tuple, Dict
-from pathlib import Path
-from fedlab.utils.functional import AverageMeter
+from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
-from setup import DEBUG100
 
+from setup import DEBUG100
 from decision_tree import is_rule_sat, dist_to_rule
-from torchvision.utils import save_image
 SPECIAL_CASE_DATA_ZEROS_ONES = 100
+
+class AverageMeter(object):
+    """Record metrics information"""
+
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0.0
+        self.avg = 0.0
+        self.sum = 0.0
+        self.count = 0.0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val
+        self.count += n
+        if self.count == 0:
+            return
+        else:
+            self.avg = self.sum / self.count
 
 def get_device(use_cuda, device_name):
     if use_cuda:
@@ -233,7 +247,7 @@ def evaluate_linear_concept(args, model, X, Y, concept_id):
             acc_0_.update(torch.sum(predicted[labels_0_idx].eq(labels[labels_0_idx])).item(), len(labels_0_idx))
             acc_1_.update(torch.sum(predicted[labels_1_idx].eq(labels[labels_1_idx])).item(), len(labels_1_idx))
     model.stop_probe_mode()
-    return loss_.sum, acc_.sum/acc_.count, acc_0_.sum/acc_0_.count, acc_1_.sum/acc_1_.count
+    return loss_.sum, 0.0 if acc_.count == 0 else acc_.sum/acc_.count, 0.0 if acc_0_.count == 0 else acc_0_.sum/acc_0_.count, 0.0 if acc_1_.count == 0 else acc_1_.sum/acc_1_.count
 
 def evaluate_linear_concepts(model, data_loader):
     """Evaluate concept representation accuracy.
@@ -288,4 +302,4 @@ def evaluate(model, criterion, test_loader):
             loss_.update(loss.item())
             acc_.update(torch.sum(predicted.eq(labels)).item(), len(labels))
 
-    return loss_.sum, acc_.sum/acc_.count
+    return loss_.sum, 0.0 if acc_.count == 0 else acc_.sum/acc_.count

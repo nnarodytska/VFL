@@ -795,7 +795,7 @@ def generate_mnist_concept_dataset(
     X = np.concatenate(
         (positive_images.cpu().numpy(), negative_images.cpu().numpy()), 0
     )
-    y = np.concatenate((np.ones(subset_size), np.zeros(subset_size)), 0)
+    y = np.concatenate((np.ones(len(positive_images), dtype=np.int64), np.zeros(len(negative_images), dtype=np.int64)), 0)
     np.random.seed(random_seed)
     rand_perm = np.random.permutation(len(X))
     return X[rand_perm], y[rand_perm]
