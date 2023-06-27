@@ -1,5 +1,26 @@
-
+import torch
 import torch.nn as nn
+from utils import get_device
+
+def get_mnist_model(args):
+    device = get_device(args.cuda, args.device)
+    if args.model == "mlp":
+        return MLP(784, 10).to(device)
+
+    if args.model == "smallmlp":
+        return SmallMLP(784, 10).to(device)
+
+    if args.model == "tinymlp":
+        return TinyMLP(784, 10).to(device)
+    
+    if args.model == "micromlp":
+        if  not hasattr(args, 'active_layers') or  args.active_layers is None:
+            return MicroMLP(784, 10).to(device)
+        else:
+            return MicroMLP(784, 10, active_layers=args.active_layers).to(device)
+
+    if args.model == "nanomlp":
+        return NanoMLP(784, 10).to(device)
 
 class LinearLayerConcept(nn.Module):
     def __init__(self, input_dim, output_dim, bias = True):
@@ -107,6 +128,7 @@ class TinyMLP(nn.Module):
         self.fc3 = nn.Linear(20, 20)
         self.fc4 = nn.Linear(20, output_size)
         self.relu = nn.ReLU()
+        
     def input_to_representation(self, x):
         x = x.view(x.shape[0], -1)
         x = self.relu(self.fc1(x))
@@ -257,3 +279,4 @@ class NanoMLP(nn.Module):
         for concept_layer in self.concept_layers:
             output.append(concept_layer(x))
         return tuple(output)
+

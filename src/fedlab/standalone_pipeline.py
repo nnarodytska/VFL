@@ -2,7 +2,7 @@ import os
 from fedlab.core.standalone import StandalonePipeline
 import torch
 from torch import nn
-from utils import evaluate_rules, evaluate_label_specific, plot_client_stats, evaluate_linear_concepts, evaluate
+from utils import evaluate_rules, evaluate_label_specific, plot_client_stats, evaluate_linear_concepts, evaluate, get_device
 import collections.abc
 
 class EvalPipeline(StandalonePipeline):
@@ -163,11 +163,13 @@ class EvalPipeline(StandalonePipeline):
     def load_global_model(self, path):
         #print(path)
         assert(os.path.exists(path))
-        self.handler._model = torch.load(path+'/global.pt').cuda()
+        device = get_device(self.trainer.cuda, self.trainer.device)
+        self.handler._model = torch.load(path+'/global.pt').to(device)
 
     def load_model(self, path):
-        assert(os.path.exists(path)) 
-        self.handler._model = torch.load(path+'/global.pt').cuda()
+        assert(os.path.exists(path))
+        device = get_device(self.trainer.cuda, self.trainer.device)
+        self.handler._model = torch.load(path+'/global.pt').to(device)
  
         # for p_, p in zip(self.handler._model.parameters(), self.handler.model.parameters()):
         #     print(p_, p)
@@ -176,7 +178,7 @@ class EvalPipeline(StandalonePipeline):
         print("loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
         clients = list(range(self.handler.num_clients))
         for id, client in enumerate(clients):
-            self.trainer._model = torch.load(path+f"/client_{client}.pt").cuda()
+            self.trainer._model = torch.load(path+f"/client_{client}.pt").to(device)
             print(self.trainer._model)
             data_loader = self.trainer.dataset.get_dataloader(client, self.trainer.batch_size)
             loss, acc = evaluate(self.trainer._model, nn.CrossEntropyLoss(), data_loader)

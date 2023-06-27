@@ -1,5 +1,5 @@
 from fedlab.contrib.algorithm.basic_client import SGDSerialClientTrainer
-from utils import map_inputs_to_rules, calculate_dist_to_rule, calculate_similarity_loss
+from utils import map_inputs_to_rules, calculate_dist_to_rule, calculate_similarity_loss, get_device
 
 import torch.nn as nn
 import torch
@@ -102,6 +102,8 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
             raise Exception("If using linear concepts for personalization, model needs to have concept layers.")
         
 
+        device = get_device(self.cuda, self.device)
+    
         # print(self._model)
         # print(model_parameters.shape)
         self.set_model(model_parameters)
@@ -124,8 +126,8 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
                 cnt = 0
                 for data, target in train_loader:
                     if self.cuda:
-                        data = data.cuda(self.device)
-                        target = target.cuda(self.device)
+                        data = data.to(device)
+                        target = target.to(device)
                     concept_outputs = self.global_model(data)[1:-1]
                     concept_labels = []
                     for c_idx, concept_output in enumerate(concept_outputs):
@@ -148,8 +150,8 @@ class SGDSerialClientTrainerExt(SGDSerialClientTrainer):
             idx_strt = 0
             for data, target in train_loader:
                 if self.cuda:
-                    data = data.cuda(self.device)
-                    target = target.cuda(self.device)
+                    data = data.to(device)
+                    target = target.to(device)
                 # if epoch == 0:
                 #     print(data)
                 #     print(target)

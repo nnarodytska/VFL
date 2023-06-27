@@ -11,38 +11,22 @@ from fedlab.utils.functional import AverageMeter
 import matplotlib.pyplot as plt
 from setup import DEBUG100
 
-from mlp import MLP, SmallMLP, TinyMLP, MicroMLP, NanoMLP
+from architectures_mnist import MLP, SmallMLP, TinyMLP, MicroMLP, NanoMLP
 from decision_tree import is_rule_sat, dist_to_rule
 from torchvision.utils import save_image
 SPECIAL_CASE_DATA_ZEROS_ONES = 100
 
-def get_model(args):
-    if args.model == "mlp":
-        return MLP(784, 10).cuda()
-
-    if args.model == "smallmlp":
-        return SmallMLP(784, 10).cuda()
-
-    if args.model == "tinymlp":
-        return TinyMLP(784, 10).cuda()
-    
-    if args.model == "micromlp":
-        if  not hasattr(args, 'active_layers') or  args.active_layers is None:
-            return MicroMLP(784, 10).cuda()
-        else:
-            return MicroMLP(784, 10, active_layers=args.active_layers).cuda()
-
-
-    if args.model == "nanomlp":
-        return NanoMLP(784, 10).cuda()
-
+def get_device(use_cuda, device_name):
+    if use_cuda:
+        device = torch.device(device_name)
+    else:
+        device = torch.device("cpu")
+    return device
 
 def extract_testset(dataset, type = "test"):
     return  dataset.get_full_dataset(type = type)
 
-
 def subsample_trainset(dataset, fraction = 0.1):
-
     subsets = []
     for cid in range(dataset.num_clients):
         data4cid = dataset.get_dataloader(cid)
@@ -54,42 +38,6 @@ def subsample_trainset(dataset, fraction = 0.1):
     subsample_train = torch.utils.data.ConcatDataset(subsets)
     print(f"Generated subsampled dataset with fraction {fraction} is of length: {len(subsample_train)}")
     return subsample_train
-
-def generate_concept_dataset(dataset: Dataset, concept_classes: List[int], subset_size: int,
-                                   random_seed: int) -> Tuple:
-    """
-    Return a concept dataset with positive/negatives for MNIST
-    Args:
-        dataset: the underlying dataset
-        random_seed: random seed for reproducibility
-        subset_size: size of the positive and negative subset
-        concept_classes: the classes where the concept is present
-
-    Returns:
-        a concept dataset of the form X (features),y (concept labels)
-    """
-    dataloader = torch.utils.data.DataLoader(dataset)
-    targets = []
-    for _,target in dataloader:
-        targets.append(target[0].int())
-    mask = torch.zeros(len(targets))
-    for idx, target in enumerate(targets):  # Scan the dataset for valid examples
-        if target in concept_classes:
-            mask[idx] = 1
-    positive_idx = torch.nonzero(mask).flatten()
-    negative_idx = torch.nonzero(1 - mask).flatten()
-    positive_loader = torch.utils.data.DataLoader(dataset, batch_size=subset_size,
-                                                  sampler=SubsetRandomSampler(positive_idx))
-    negative_loader = torch.utils.data.DataLoader(dataset, batch_size=subset_size,
-                                                  sampler=SubsetRandomSampler(negative_idx))
-    positive_images, positive_labels = next(iter(positive_loader))
-    negative_images, negative_labels = next(iter(negative_loader))
-    X = np.concatenate((positive_images.cpu().numpy(), negative_images.cpu().numpy()), 0)
-    y = np.concatenate((np.ones(len(positive_images), dtype=np.int64), np.zeros(len(negative_images), dtype=np.int64)), 0)
-    np.random.seed(random_seed)
-    rand_perm = np.random.permutation(len(X))
-    return X[rand_perm], y[rand_perm]
-
 
 def map_inputs_to_rules(model, rules, data_loader):
     """

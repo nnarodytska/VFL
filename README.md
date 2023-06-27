@@ -1,93 +1,32 @@
 # VFL
+A well-known challenge of personalized federated learning is the phenomenon of *catastrophic forgetting* where fine-tuning on an individual client’s data causes the model to overfit, decreasing performance on global data. This repository includes to avoid catastrophic forgetting by using the notion of human-understandable *concepts*. We first train a global model in standard federated manner be leveraging the [FedLab](https://github.com/SMILELab-FL/FedLab) framework. Then, we extract concept representations from the global model using a dataset with concept labels. Finally, the global model is personalized for each client while ensuring that the concept representations change as little as possible. This is achieved by adding a new type of regularization term during personalization of the global model. 
 
-Install the main framework
+The repository currently supports concept representations in the form of decision trees and linear or non-linear neural networks. Datasets currently supported are MNIST and the [Caltech-UCSD Birds](https://www.vision.caltech.edu/datasets/cub_200_2011/) dataset. Both these datasets come with concept annotations. For more details about the annotations refer to [this](https://arxiv.org/abs/2209.11222) paper.
 
+
+## Pre-requisites
+The repository uses PyTorch and the `fedlab` package. Install `fedlab` as follows:
 ```
 pip3 install fedlab
 ```
 
-
-To train:
-
-```
-cd src/fedlab/
-
-python3 train.py  --total_client 10 --com_round 50 --sample_ratio 0.9 --batch_size 256 --epochs 3 --lr 0.1 --major_classes_num 5 --personalization_steps 25
-```
-
-To personalize models:
+## Running the code
+To train the global model using federated learning, run the following commands (starting from the root folder of this repository):
 
 ```
 cd src/fedlab/
 
-python3 personalize.py  --total_client 10 --com_round 50 --sample_ratio 0.9 --batch_size 256 --epochs 3 --lr 0.1 --major_classes_num 5 --personalization_steps 25 --personalization_sim_weight 0.005
-
-python3 personalize.py --total_client 10 --com_round 50 --sample_ratio 0.9 --batch_size 256 --epochs 5 --lr 0.1 --major_classes_num 2 --personalization_steps 25 --personalization_steps_replay 50 --personalization_sim_weight 0.005
-
-python3 personalize.py --total_client 10 --com_round 50 --sample_ratio 0.9 --batch_size 256 --epochs 5 --lr 0.1 --major_classes_num 3 --personalization_steps 25 --personalization_steps_replay 50 --personalization_sim_weight 0.005
-
+python3 train.py --total_client 10 --com_round 25 --sample_ratio 0.9 --batch_size 256 --epochs 4 --lr 0.1 --major_classes_num 1 --personalization_steps 25 --augement_data_percent_per_class  0.001 --dataset mnist --model micromlp
 ```
 
-The latest model (04/05/2023):
+After training, there will be a summary config file at `../../datasets/mnist/exps_shortcuts/config_<DATE>.json`, where DATE is the current date.
 
-
-2 major classes per client
-```
-python3 personalize.py --total_client 10 --com_round 15 --sample_ratio 0.9 --batch_size 256 --epochs 5 --lr 0.1 --major_classes_num 2 --personalization_steps 25 --personalization_steps_replay 50 --personalization_sim_weight 0.005 --augement_data_percent_per_class  0.01
+To personalize the global model, run the following commands (starting from the root folder of this repository):
 
 ```
+cd src/fedlab/
 
-1 major class per client
-
-```
-python3 personalize.py --total_client 10 --com_round 25 --sample_ratio 0.9 --batch_size 256 --epochs 5 --lr 0.1 --major_classes_num 1 --personalization_steps 25 --personalization_steps_replay 50 --personalization_sim_weight 0.005 --augement_data_percent_per_class  0.01
-
+python3 personalize.py --config_info  ../../datasets/mnist/exps_shortcuts/config_<DATE>.json --personalization_steps_replay 25 --personalization_sim_weight 5  --concept_epochs 50 --active_layers=2  --active_concepts=Curvature,Loop,'Vertical Line','Horizontal Line',Curvature,Loop,'Vertical Line','Horizontal Line' --concept_representation linear
 ```
 
-<!-- The latest model (04/10/2023):
-
-```
-python3 personalize.py --personalization_steps_replay 50 --personalization_sim_weight 0.005   --total_client 10 --com_round 25 --sample_ratio 0.9 --batch_size 256 --epochs 5 --lr 0.1 --major_classes_num 1 --personalization_steps 25 --augement_data_percent_per_class  0.005 --model tinymlp --augement_data_with_zeros 250;
-
-python3 personalize.py --personalization_steps_replay 50 --personalization_sim_weight 0.005 --total_client 10 --com_round 25 --sample_ratio 0.9 --batch_size 256 --epochs 5 --lr 0.1 --major_classes_num 1 --personalization_steps 25 --augement_data_percent_per_class  0.005 --model smallmlp --augement_data_with_zeros 250;
- -->
-
-The latest model (04/10/2023) using configs for tiny ans small models, respectively:
-
-```
-python3 personalize.py --config_info ../../datasets/mnist/exps_shortcuts/shortcut_april_10_tiny.json --personalization_steps_replay 50 --personalization_sim_weight 0.005
-
-python3 personalize.py --config_info ../../datasets/mnist/exps_shortcuts/shortcut_april_10_small.json --personalization_steps_replay 50 --personalization_sim_weight 0.005
-
-```
-
-# Training
-
-
-To train a nano model, please perform a sequence of steps:
-
-1. to run training
-```
-python3  train.py  --total_client 10 --com_round 25 --sample_ratio 0.9 --batch_size 256 --epochs 1 --lr 0.1 --major_classes_num 1 --personalization_steps 25 --augement_data_percent_per_class  0.001 --model nanomlp
-```
-
-2. after training, we will have a summary config file: "../../datasets/mnist/exps_shortcuts/config_<DATE>.json", where DATE is the current date. 
-
-3. to run personalization
-
-```
-python3 personalize.py --config_info  ../../datasets/mnist/exps_shortcuts/config_<DATE>.json --personalization_steps_replay 50 --personalization_sim_weight 0.005 --concept_representation <decision_tree/linear> --concept_epochs 50
-```
-
-
-
-Some extra stuff (to remove later)
-```
-python3 train.py --total_client 10 --com_round 25 --sample_ratio 0.9 --batch_size 256 --epochs 4 --lr 0.1 --major_classes_num 1 --personalization_steps 25 --augement_data_percent_per_class  0.001 --model micromlp
-python3 train.py --total_client 10 --com_round 25 --sample_ratio 0.9 --batch_size 256 --epochs 4 --lr 0.1 --major_classes_num 1 --personalization_steps 15 --augement_data_percent_per_class  0.02 --model micromlp
-python3 train.py --total_client 10 --com_round 25 --sample_ratio 0.9 --batch_size 256 --epochs 4 --lr 0.1 --major_classes_num 1 --personalization_steps 15 --augement_data_percent_per_class  0.03 --model micromlp
-
-
- python3 personalize.py --config_info  ../../datasets/mnist/exps_shortcuts/config_05-16-2023-23-37-23.json --personalization_steps_replay 25 --personalization_sim_weight 5  --concept_epochs 50 --active_layers=2  --active_concepts=Curvature,Loop,'Vertical Line','Horizontal Line',Curvature,Loop,'Vertical Line','Horizontal Line' --concept_representation linear
-
-```
+The details about the options passed to `train.py` and `personalize.py` are available in the file `setup.py`.

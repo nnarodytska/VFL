@@ -1,64 +1,72 @@
-from json import load
-import os
-import random
-from copy import deepcopy
-from pathlib import Path
-
-import torchvision
-import torchvision.transforms as transforms
 import sys
+
 import torch
+import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
+from torch import nn
 
 sys.path.append("../../")
 torch.manual_seed(0)
 
-
-from mlp import MLP
 from standalone_pipeline import EvalPipeline
 from partitioned_mnist import PartitionedMNIST
-from setup import setup_args, setup_args_load
+from setup import setup_args_load
 from basic_client_modifed import SGDSerialClientTrainerExt
 from decision_tree import get_invariant, validate
-from utils import extract_testset, generate_concept_dataset, get_model, subsample_trainset, \
-    learn_linear_concept, evaluate_linear_concept, evaluate
+from utils import extract_testset, subsample_trainset, \
+    learn_linear_concept, evaluate_linear_concept, evaluate, get_device
+from dataset import generate_mnist_concept_dataset, mnist_concept_to_class, generate_cub_concept_dataset
+from architectures_mnist import get_mnist_model
+from architectures_cub import get_cub_model
 
 from fedlab.contrib.algorithm.basic_server import SyncServerHandler
-from torch import nn
 
 
 def personalize():
     ## extracting rules
     args = setup_args_load()
-    model = get_model(args)
+    device = get_device(args.cuda, args.device)
+
+    if args.dataset == "mnist":
+        model = get_mnist_model(args)
+    elif args.dataset == "cub":
+        model = get_cub_model(args)
 
     # server
     handler = SyncServerHandler(model = model, 
-                                device = 'cuda:0',
+                                device = args.device,
                                 global_round = args.com_round, 
-                                cuda = args.cuda, 
+                                cuda = args.cuda,
                                 sample_ratio = args.sample_ratio)
 
     # client
     trainer = SGDSerialClientTrainerExt(model =model, 
                                     num_clients = args.total_client, 
                                     cuda=args.cuda,
-                                    device = 'cuda:0',
+                                    device = args.device,
                                     concept_representation=args.concept_representation)
 
-    dataset = PartitionedMNIST( root= args.root_path, 
-                                path= args.data_path, 
-                                num_clients=args.total_client,
-                                dir_alpha=args.alpha,
-                                seed=args.seed,
-                                preprocess=args.preprocess,
-                                partition=args.partition, 
-                                major_classes_num= args.major_classes_num,
-                                download=True,                           
-                                verbose=True,
-                                skip_regen = True,
-                                transform=transforms.Compose(
-                                [transforms.ToPILImage(), transforms.ToTensor()]))
+    if args.dataset == "mnist":
+        dataset = PartitionedMNIST( root= args.root_path, 
+                                    path= args.data_path, 
+                                    num_clients=args.total_client,
+                                    dir_alpha=args.alpha,
+                                    seed=args.seed,
+                                    preprocess=args.preprocess,
+                                    partition=args.partition, 
+                                    major_classes_num= args.major_classes_num,
+                                    download=True,                           
+                                    verbose=True,
+                                    skip_regen = True,
+                                    transform=transforms.Compose(
+                                    [transforms.ToPILImage(), transforms.ToTensor()]))
+        # test_data = torchvision.datasets.MNIST(root="../../datasets/mnist/",
+        #                                        train=False,
+        #                                        transform=transforms.ToTensor())
+        # test_loader = DataLoader(test_data, batch_size=1024)
+    elif args.dataset == "cub":
+        dataset = None
+        raise NotImplementedError
 
 
     ################ sample train set #########################
@@ -66,12 +74,7 @@ def personalize():
     #########################
 
     trainer.setup_dataset(dataset)
-    # test_data = torchvision.datasets.MNIST(root="../../datasets/mnist/",
-    #                                        train=False,
-    #                                        transform=transforms.ToTensor())
-    # test_loader = DataLoader(test_data, batch_size=1024)
-
-
+   
     test_data = extract_testset(dataset, type = "test")
     test_loader = DataLoader(test_data, batch_size =  args.batch_size)
 
@@ -89,40 +92,38 @@ def personalize():
     loss, acc = evaluate(handler.model, nn.CrossEntropyLoss(), test_loader)
     print("Global model loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
 
-    # concept_to_class = {
-    #     "Loop": [0, 2, 6, 8, 9],
-    #     "Vertical Line": [1, 4, 7],
-    #     "Horizontal Line": [4, 5, 7],
-    #     "Curvature": [0, 2, 3, 5, 6, 8, 9],
-    # }
-
-    concept_to_class = {
-        "Curvature": [0, 2, 3, 5, 6, 8, 9],
-        "Loop": [0, 6, 8, 9],
-        "Vertical Line": [1, 4, 5, 7],
-        "Horizontal Line": [2, 4, 5, 7]
-    }
-
     # Load concept sets
     rules = []
     for idx, concept in enumerate(args.active_concepts):
-        X_train, C_train = generate_concept_dataset(subsample_dataset, concept_to_class[concept],
-                                                    subset_size=10000,
-                                                    random_seed=42)
-        X_test_sub, C_test_sub = generate_concept_dataset(test_data, concept_to_class[concept],
-                                                    subset_size=1000,
-                                                    random_seed=42)
-        X_test, C_test = generate_concept_dataset(test_data, concept_to_class[concept],
-                                                    subset_size=10000,
-                                                    random_seed=42)
+        if args.dataset == "mnist":
+            X_train, C_train = generate_mnist_concept_dataset(subsample_dataset, mnist_concept_to_class[concept],
+                                                        subset_size=10000,
+                                                        random_seed=42)
+            X_test_sub, C_test_sub = generate_mnist_concept_dataset(test_data, mnist_concept_to_class[concept],
+                                                        subset_size=1000,
+                                                        random_seed=42)
+            X_test, C_test = generate_mnist_concept_dataset(test_data, mnist_concept_to_class[concept],
+                                                        subset_size=10000,
+                                                        random_seed=42)
+        elif args.dataset == "cub":
+            raise NotImplementedError
+            X_train, C_train = generate_cub_concept_dataset(subsample_dataset, int(concept),
+                                                        subset_size=10000,
+                                                        random_seed=42)
+            X_test_sub, C_test_sub = generate_cub_concept_dataset(test_data, int(concept),
+                                                        subset_size=1000,
+                                                        random_seed=42)
+            X_test, C_test = generate_cub_concept_dataset(test_data, int(concept),
+                                                        subset_size=10000,
+                                                        random_seed=42)
 
         # Evaluate latent representation
-        X_train = torch.from_numpy(X_train).to("cuda:0")
-        X_test_sub = torch.from_numpy(X_test_sub).to("cuda:0")
-        X_test = torch.from_numpy(X_test).to("cuda:0")
-        C_train = torch.from_numpy(C_train).to("cuda:0")
-        C_test_sub = torch.from_numpy(C_test_sub).to("cuda:0")
-        C_test = torch.from_numpy(C_test).to("cuda:0")
+        X_train = torch.from_numpy(X_train).to(device)
+        X_test_sub = torch.from_numpy(X_test_sub).to(device)
+        X_test = torch.from_numpy(X_test).to(device)
+        C_train = torch.from_numpy(C_train).to(device)
+        C_test_sub = torch.from_numpy(C_test_sub).to(device)
+        C_test = torch.from_numpy(C_test).to(device)
 
         if args.concept_representation == "decision_tree":
             H_train = handler.model.input_to_representation(X_train)
@@ -144,7 +145,7 @@ def personalize():
             learn_linear_concept(args, handler.model, X_train, C_train, idx)
             loss, acc, acc_0, acc_1 = evaluate_linear_concept(args, handler.model, X_train, C_train, idx)
             # {"concept classifier train loss":<45} {loss:.2f}, 
-            print(f'{concept:<20} train accuracy {acc:.2f} on entire test set,              absence train accuracy {acc_0:.2f}, presence train accuracy {acc_1:.2f}')
+            print(f'{concept:<20} train accuracy {acc:.2f} on subsampled train set,              absence train accuracy {acc_0:.2f}, presence train accuracy {acc_1:.2f}')
             loss, acc, acc_0, acc_1 = evaluate_linear_concept(args, handler.model, X_test_sub, C_test_sub, idx)
             print(f'{concept:<20} test accuracy  {acc:.2f} on subsampled, balanced test set, absence test  accuracy {acc_0:.2f}, presence test  accuracy {acc_1:.2f}')
             loss, acc, acc_0, acc_1 = evaluate_linear_concept(args, handler.model, X_test, C_test, idx)
