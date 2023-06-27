@@ -78,13 +78,13 @@ def train():
     standalone_eval.personalize(nb_rounds=args.personalization_steps, save_path= args.models_path,  save = True)
 
     if not os.path.exists(args.data_path):
-        os.makedirs(args.data_path)
+        os.makedirs(args.data_path, exist_ok=True)
     jfile = os.path.join(args.data_path, 'config_data.json')
     with open(jfile, 'w') as fp:
         json.dump(args.json_args_data, fp)
 
     if not os.path.exists(args.models_path):
-        os.makedirs(args.models_path)
+        os.makedirs(args.models_path, exist_ok=True)
     jfile = os.path.join(args.models_path, 'config_model.json')
     with open(jfile, 'w') as fp:
         json.dump(args.json_args_model, fp)
@@ -95,7 +95,7 @@ def train():
     now = datetime.now() 
 
     if not os.path.exists(f"{args.root_path}/{args.dataset}/exps_shortcuts/"):
-        os.makedirs(f"{args.root_path}/{args.dataset}/exps_shortcuts/")    
+        os.makedirs(f"{args.root_path}/{args.dataset}/exps_shortcuts/", exist_ok=True)    
     shortcut_name = f"{args.root_path}/{args.dataset}/exps_shortcuts/config_{now.strftime('%m-%d-%Y-%H-%M-%S')}.json"
     print(shortcut_name)
     with open(shortcut_name, 'w') as fp:

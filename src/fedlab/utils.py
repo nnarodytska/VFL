@@ -11,7 +11,6 @@ from fedlab.utils.functional import AverageMeter
 import matplotlib.pyplot as plt
 from setup import DEBUG100
 
-from architectures_mnist import MLP, SmallMLP, TinyMLP, MicroMLP, NanoMLP
 from decision_tree import is_rule_sat, dist_to_rule
 from torchvision.utils import save_image
 SPECIAL_CASE_DATA_ZEROS_ONES = 100
