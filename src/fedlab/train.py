@@ -12,6 +12,7 @@ torch.manual_seed(0)
 
 from standalone_pipeline import EvalPipeline
 from partitioned_mnist import PartitionedMNIST
+from partitioned_cub import PartitionedCUB
 from setup import setup_args
 from basic_client_modifed import SGDSerialClientTrainerExt
 from fedlab.contrib.algorithm.basic_server import SyncServerHandler
@@ -56,8 +57,17 @@ def train():
                                     transform=transforms.Compose(
                                     [transforms.ToPILImage(), transforms.ToTensor()]))
     elif args.dataset == "cub":
-        dataset = None
-        raise NotImplementedError
+        dataset = PartitionedCUB( root= args.root_path, 
+                                    path= args.data_path, 
+                                    num_clients=args.total_client,
+                                    dir_alpha=args.alpha,
+                                    seed=args.seed,
+                                    preprocess=args.preprocess,
+                                    partition=args.partition, 
+                                    major_classes_num= args.major_classes_num,
+                                    verbose=True,
+                                    skip_regen = True,
+                                    augment_percent=args.augement_data_percent_per_class)
 
     trainer.setup_dataset(dataset)
     trainer.setup_optim(args.epochs, args.batch_size, args.lr)
