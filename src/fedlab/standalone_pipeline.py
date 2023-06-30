@@ -29,7 +29,7 @@ class EvalPipeline(StandalonePipeline):
             nb_round += 1
             print("nb rounds {}: loss {:.4f}, test accuracy {:.4f}".format(nb_round, loss, acc))
             for client in sampled_clients:
-                data_loader = self.trainer.dataset.get_dataloader(client, self.trainer.batch_size)
+                data_loader = self.trainer.dataset.get_dataloader(client, self.trainer.batch_size, type = "test")
                 loss, acc = evaluate(self.handler.model, nn.CrossEntropyLoss(), data_loader)
                 print(f"nb rounds {nb_round}: client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
 
@@ -63,7 +63,7 @@ class EvalPipeline(StandalonePipeline):
         client_stats_pre_personalization = {}
         client_stats_post_personalization = {}
         for id, client in enumerate(clients):
-            data_loader = self.trainer.dataset.get_dataloader(client, self.trainer.batch_size)
+            data_loader = self.trainer.dataset.get_dataloader(client, self.trainer.batch_size, type = "test")
             loss, acc = evaluate(self.handler.model, nn.CrossEntropyLoss(), data_loader)
             if debug == 1: print(f"before personalization: client {client}: "+ "loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
             label_specific_acc_local = evaluate_label_specific(self.handler.model, data_loader)
@@ -91,6 +91,7 @@ class EvalPipeline(StandalonePipeline):
 
         
         original_epoch = self.trainer.epochs
+        #TODO: Check if fixing self.trainer.epochs to 100 is the right thing to do
         self.trainer.epochs  = 100
         self.trainer.personalization = True
         self.trainer.personalization_rounds = nb_rounds
@@ -102,7 +103,7 @@ class EvalPipeline(StandalonePipeline):
         for id, client in enumerate(clients):
             model_parameters = uploads[id][0]
             self.trainer.set_model(model_parameters)
-            data_loader = self.trainer.dataset.get_dataloader(client, self.trainer.batch_size)
+            data_loader = self.trainer.dataset.get_dataloader(client, self.trainer.batch_size, type = "test")
             loss, acc = evaluate(self.trainer._model, nn.CrossEntropyLoss(), data_loader)
             if debug == 1: print(f"after personalization (# rounds {self.trainer.personalization_rounds}): \
                   client {client}: "+ "loss {:.4f}, test accuracy {:.4f} (from {:.4f})".format(loss, acc, client_stats_pre_personalization[client]["local_accuracy"]))
