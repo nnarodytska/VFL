@@ -15,7 +15,6 @@ from partitioned_mnist import PartitionedMNIST
 from setup import setup_args
 from basic_client_modifed import SGDSerialClientTrainerExt
 from fedlab.contrib.algorithm.basic_server import SyncServerHandler
-from utils import extract_testset
 from architectures_mnist import get_mnist_model
 from architectures_cub import get_cub_model
 
@@ -56,10 +55,6 @@ def train():
                                     special_case = args.special_data,
                                     transform=transforms.Compose(
                                     [transforms.ToPILImage(), transforms.ToTensor()]))
-        # test_data = torchvision.datasets.MNIST(root="../../datasets/mnist/",
-        #                                        train=False,
-        #                                        transform=transforms.ToTensor())
-        # test_loader = DataLoader(test_data, batch_size=1024)
     elif args.dataset == "cub":
         dataset = None
         raise NotImplementedError
@@ -67,11 +62,11 @@ def train():
     trainer.setup_dataset(dataset)
     trainer.setup_optim(args.epochs, args.batch_size, args.lr)
 
-    test_data = extract_testset(dataset, type = "test")
-    test_loader = DataLoader(test_data, batch_size =  args.batch_size)
+    full_test_data = dataset.get_full_dataset(type = "test")
+    full_test_loader = DataLoader(full_test_data, batch_size =  args.batch_size)
 
     # global main
-    standalone_eval = EvalPipeline(handler=handler, trainer=trainer, test_loader=test_loader)
+    standalone_eval = EvalPipeline(handler=handler, trainer=trainer, test_loader=full_test_loader)
     standalone_eval.main()
 
     trainer.setup_optim(args.epochs, args.batch_size, args.lr/10)

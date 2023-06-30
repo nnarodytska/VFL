@@ -13,7 +13,7 @@ def setup_args_load():
     parser.add_argument("--personalization_sim_weight", type=float, default = 1.0, help='hyperparameter controlling the importance of the regularization term that maintains the concepts')
     parser.add_argument("--concept_representation", type=str, default = None, help='type of concept representation: decision_tree or linear') # or "decision_tree" or "linear"
     parser.add_argument("--active_layers",nargs="*", type=str, default =None, help='')
-    parser.add_argument("--active_concepts",nargs="*", type=str, default = ["Curvature,Loop,Vertical Line,Horizontal Line"], help='')
+    parser.add_argument("--active_concepts",nargs="*", type=str, default = None, help='')
     parser.add_argument("--personalization_lr", type=float, default = None, help='learning rate to be used during personalization')
 
 
@@ -79,7 +79,8 @@ def setup_args():
     parser.add_argument("--device", type=str, default = "cuda:0", help='the specific GPU to be used if one is available')
     parser.add_argument("--major_classes_num", type=int, default =1, help='')
     parser.add_argument("--augement_data_percent_per_class", type=float, default =0, help='')
-    #TODO: Remove / refactor the next two options
+
+    #TODO: Remove / refactor the next two MNIST specific options
     parser.add_argument("--special_data", type=int, default = None, help='')
     parser.add_argument("--augement_data_with_zeros", type=int, default = 0, help='')
 

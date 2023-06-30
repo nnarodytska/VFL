@@ -246,6 +246,13 @@ class CUBDataset(Dataset):
         self.uncertain_label = uncertain_label
         self.image_dir = image_dir
         self.n_class_attr = n_class_attr
+        self.targets = []
+        for idx in range(len(self.data)):
+            img_data = self.data[idx]
+            img_path = img_data["img_path"]
+            class_label = img_data["class_label"]
+            self.targets.append(class_label)
+
 
     def __len__(self):
         return len(self.data)
@@ -669,15 +676,13 @@ class SEERDataset(Dataset):
             return x, y
 
 
-def load_cub_data(
+def load_cub_dataset(
     pkl_paths,
     use_attr,
     no_img,
-    batch_size,
     uncertain_label=False,
     n_class_attr=2,
     image_dir="images",
-    resampling=False,
     resol=299,
 ):
     """
@@ -713,6 +718,27 @@ def load_cub_data(
     dataset = CUBDataset(
         pkl_paths, use_attr, no_img, uncertain_label, image_dir, n_class_attr, transform
     )
+    return dataset
+
+def load_cub_data(
+    pkl_paths,
+    use_attr,
+    no_img,
+    batch_size,
+    uncertain_label=False,
+    n_class_attr=2,
+    image_dir="images",
+    resampling=False,
+    resol=299,
+):
+    is_training = any(["train.pkl" in f for f in pkl_paths])
+    dataset = load_cub_dataset(pkl_paths=pkl_paths, 
+                               use_attr=use_attr, 
+                               no_img=no_img, 
+                               uncertain_label=uncertain_label, 
+                               n_class_attr=n_class_attr, 
+                               image_dir=image_dir, 
+                               resol=resol)
     if is_training:
         drop_last = True
         shuffle = True
@@ -844,16 +870,17 @@ def generate_ecg_concept_dataset(
 
 
 def generate_cub_concept_dataset(
+    dataset: Dataset,
     concept_id: int,
     subset_size: int,
     random_seed: int,
-    pkl_paths,
-    use_attr,
-    no_img,
-    uncertain_label=False,
-    n_class_attr=2,
-    image_dir="images",
-    resol=299,
+    # pkl_paths,
+    # use_attr,
+    # no_img,
+    # uncertain_label=False,
+    # n_class_attr=2,
+    # image_dir="images",
+    # resol=299,
 ) -> tuple:
     """
     Return a concept dataset with positive/negatives for CUB
@@ -866,19 +893,19 @@ def generate_cub_concept_dataset(
     Returns:
         a concept dataset of the form X (features),y (concept labels)
     """
-    resized_resol = int(resol * 256 / 224)
-    transform = transforms.Compose(
-        [
-            transforms.Resize((resized_resol, resized_resol)),
-            # transforms.CenterCrop(resol),
-            transforms.ToTensor(),  # implicitly divides by 255
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ]
-    )
+    # resized_resol = int(resol * 256 / 224)
+    # transform = transforms.Compose(
+    #     [
+    #         transforms.Resize((resized_resol, resized_resol)),
+    #         # transforms.CenterCrop(resol),
+    #         transforms.ToTensor(),  # implicitly divides by 255
+    #         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    #     ]
+    # )
 
-    dataset = CUBDataset(
-        pkl_paths, use_attr, no_img, uncertain_label, image_dir, n_class_attr, transform
-    )
+    # dataset = CUBDataset(
+    #     pkl_paths, use_attr, no_img, uncertain_label, image_dir, n_class_attr, transform
+    # )
     positive_idx = dataset.concept_example_ids(concept_id)
     negative_idx = dataset.concept_example_ids(concept_id, False)
     positive_loader = torch.utils.data.DataLoader(

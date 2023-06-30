@@ -36,9 +36,6 @@ def get_device(use_cuda, device_name):
         device = torch.device("cpu")
     return device
 
-def extract_testset(dataset, type = "test"):
-    return  dataset.get_full_dataset(type = type)
-
 def subsample_trainset(dataset, fraction = 0.1):
     subsets = []
     for cid in range(dataset.num_clients):
@@ -51,6 +48,19 @@ def subsample_trainset(dataset, fraction = 0.1):
     subsample_train = torch.utils.data.ConcatDataset(subsets)
     print(f"Generated subsampled dataset with fraction {fraction} is of length: {len(subsample_train)}")
     return subsample_train
+
+def subsample_testset(dataset, fraction = 0.1):
+    subsets = []
+    for cid in range(dataset.num_clients):
+        data4cid = dataset.get_dataloader(cid, type="test")
+        data4cid.shuffle = True
+        nb_samples = len(data4cid.dataset)
+        nb_sub_samples = int(nb_samples*fraction)
+        subset = random.sample(range(nb_samples), nb_sub_samples)
+        subsets.append(torch.utils.data.Subset(data4cid.dataset,subset))
+    subsample_test = torch.utils.data.ConcatDataset(subsets)
+    print(f"Generated subsampled dataset with fraction {fraction} is of length: {len(subsample_test)}")
+    return subsample_test
 
 def map_inputs_to_rules(model, rules, data_loader):
     """

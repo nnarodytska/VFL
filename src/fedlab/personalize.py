@@ -10,10 +10,11 @@ torch.manual_seed(0)
 
 from standalone_pipeline import EvalPipeline
 from partitioned_mnist import PartitionedMNIST
+from partitioned_cub import PartitionedCUB
 from setup import setup_args_load
 from basic_client_modifed import SGDSerialClientTrainerExt
 from decision_tree import get_invariant, validate
-from utils import extract_testset, subsample_trainset, \
+from utils import subsample_trainset, subsample_testset, \
     learn_linear_concept, evaluate_linear_concept, evaluate, get_device
 from dataset import generate_mnist_concept_dataset, mnist_concept_to_class, generate_cub_concept_dataset
 from architectures_mnist import get_mnist_model
@@ -60,25 +61,30 @@ def personalize():
                                     skip_regen = True,
                                     transform=transforms.Compose(
                                     [transforms.ToPILImage(), transforms.ToTensor()]))
-        # test_data = torchvision.datasets.MNIST(root="../../datasets/mnist/",
-        #                                        train=False,
-        #                                        transform=transforms.ToTensor())
-        # test_loader = DataLoader(test_data, batch_size=1024)
     elif args.dataset == "cub":
-        dataset = None
-        raise NotImplementedError
+        dataset = PartitionedCUB( root= args.root_path, 
+                                    path= args.data_path, 
+                                    num_clients=args.total_client,
+                                    dir_alpha=args.alpha,
+                                    seed=args.seed,
+                                    preprocess=args.preprocess,
+                                    partition=args.partition, 
+                                    major_classes_num= args.major_classes_num,
+                                    verbose=True,
+                                    skip_regen = True)
 
 
-    ################ sample train set #########################
+    ################ sample client datasets #########################
     subsample_dataset = subsample_trainset(dataset, fraction = 0.1)
     #########################
 
     trainer.setup_dataset(dataset)
    
-    test_data = extract_testset(dataset, type = "test")
-    test_loader = DataLoader(test_data, batch_size =  args.batch_size)
+    full_train_data = dataset.get_full_dataset(type = "train")
+    full_test_data = dataset.get_full_dataset(type = "test")
+    full_test_loader = DataLoader(full_test_data, batch_size =  args.batch_size)
 
-    standalone_eval = EvalPipeline(handler=handler, trainer=trainer, test_loader=test_loader)
+    standalone_eval = EvalPipeline(handler=handler, trainer=trainer, test_loader=full_test_loader)
 
     # load global model and read clients main
     standalone_eval.load_global_model(path = args.models_path)
@@ -89,32 +95,40 @@ def personalize():
     print("Model architecture:")
     print(handler.model)
     # evalution of `global` training set
-    loss, acc = evaluate(handler.model, nn.CrossEntropyLoss(), test_loader)
+    loss, acc = evaluate(handler.model, nn.CrossEntropyLoss(), full_test_loader)
     print("Global model loss {:.4f}, test accuracy {:.4f}".format(loss, acc))
 
     # Load concept sets
     rules = []
-    for idx, concept in enumerate(args.active_concepts):
+    if args.active_concepts is None:
+        if args.dataset == "mnist":
+            concepts = list(mnist_concept_to_class.keys())
+        elif args.dataset == "cub":
+            concepts = test_data.source_dataset.get_concept_names()
+    else:
+        concepts = args.active_concepts
+
+    for idx, concept in enumerate(concepts):
         if args.dataset == "mnist":
             X_train, C_train = generate_mnist_concept_dataset(subsample_dataset, mnist_concept_to_class[concept],
-                                                        subset_size=10000,
+                                                        subset_size=len(subsample_dataset),
                                                         random_seed=42)
-            X_test_sub, C_test_sub = generate_mnist_concept_dataset(test_data, mnist_concept_to_class[concept],
-                                                        subset_size=1000,
+            X_test_sub, C_test_sub = generate_mnist_concept_dataset(full_test_data, mnist_concept_to_class[concept],
+                                                        subset_size=len(full_test_data)/10,
                                                         random_seed=42)
-            X_test, C_test = generate_mnist_concept_dataset(test_data, mnist_concept_to_class[concept],
-                                                        subset_size=10000,
+            X_test, C_test = generate_mnist_concept_dataset(full_test_data, mnist_concept_to_class[concept],
+                                                        subset_size=len(full_test_data),
                                                         random_seed=42)
         elif args.dataset == "cub":
-            raise NotImplementedError
-            X_train, C_train = generate_cub_concept_dataset(subsample_dataset, int(concept),
-                                                        subset_size=10000,
+            #TODO: Figure out how to generate concept labels for subsampled client datasets
+            X_train, C_train = generate_cub_concept_dataset(full_train_data.source_dataset, idx,
+                                                        subset_size=200,
                                                         random_seed=42)
-            X_test_sub, C_test_sub = generate_cub_concept_dataset(test_data, int(concept),
-                                                        subset_size=1000,
+            X_test_sub, C_test_sub = generate_cub_concept_dataset(full_test_data.source_dataset, idx,
+                                                        subset_size=100,
                                                         random_seed=42)
-            X_test, C_test = generate_cub_concept_dataset(test_data, int(concept),
-                                                        subset_size=10000,
+            X_test, C_test = generate_cub_concept_dataset(full_test_data.source_dataset, idx,
+                                                        subset_size=len(full_test_data),
                                                         random_seed=42)
 
         # Evaluate latent representation

@@ -1,13 +1,21 @@
 import torch
 import torch.nn as nn
-from torchvision.models import inception_v3
+from torchvision.models import inception_v3, resnet50
 from typing import Optional
 from utils import get_device
 
 def get_cub_model(args):
     device = get_device(args.cuda, args.device)
-    if args.model == "cub":
-        return CUBClassifier().to(device)
+    if  not hasattr(args, 'active_layers') or  args.active_layers is None:
+        active_layers = None
+    else:
+        active_layers = args.active_layers
+    if args.model == "inception":
+        return CUBClassifier(active_layers=active_layers).to(device)
+    elif args.model == "resnet":
+        return CUBClassifier(active_layers=active_layers).to(device)
+    else:
+        raise NotImplementedError
 
 class LinearLayerConcept(nn.Module):
     def __init__(self, input_dim, output_dim, bias = True):
@@ -39,11 +47,10 @@ class SmallLayerConcept(nn.Module):
         return x
     
 class CUBClassifier(nn.Module):
-    def __init__(self, name: str = "model"):
+    def __init__(self, active_layers = None):
         super().__init__()
         self.inception = inception_v3(pretrained=True)
         self.fc = nn.Linear(2048, 200)
-        self.name = name
 
     def forward(self, x):
         x = self.input_to_representation(x)
@@ -160,4 +167,21 @@ class CUBClassifier(nn.Module):
         h = torch.flatten(h, 1)
         # N x 2048
         return self.fc(h)
+    
+class CUBResNet(nn.Module):
+    def __init__(self, active_layers = None):
+        super().__init__()
+        self.n_class = 200
+        self.base_model = resnet50(pretrained=True)
+        self.base_model.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.base_model.fc = nn.Linear(512 * 4, self.n_class)
+
+    def forward(self, x):
+        return self.base_model(x)
+
+    def input_to_representation(self, x):
+        return x
+
+    def representation_to_output(self, h):
+        return self.base_model.fc(h)
     
