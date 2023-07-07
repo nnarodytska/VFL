@@ -70,6 +70,78 @@ class CUBPartitionerExt(VisionPartitioner):
     num_features = 299 * 299 * 3
     num_classes = 200
 
+
+
+    def label_skew_quantity_based_partition(self, targets, num_clients, num_classes, major_classes_num):
+        """Label-skew:quantity-based partition.
+
+        For details, please check `Federated Learning on Non-IID Data Silos: An Experimental Study <https://arxiv.org/abs/2102.02079>`_.
+        
+        Modified from fedlab/utils/dataset/functional.py to fix error
+
+        Args:
+            targets (np.ndarray): Labels od dataset.
+            num_clients (int): Number of clients.
+            num_classes (int): Number of unique classes.
+            major_classes_num (int): Number of classes for each client, should be less then ``num_classes``.
+
+        Returns:
+            dict: ``{ client_id: indices}``.
+
+        """
+
+        def sample_without_replacement(arr):
+            if len(arr) == 0:
+                arr = list(range(num_classes))
+            random_index = np.random.randint(0, len(arr))
+            ind = arr[random_index]
+            arr.pop(random_index)
+            return ind, arr
+
+        idx_batch = [np.ndarray(0, dtype=np.int64) for _ in range(num_clients)]
+        # only for major_classes_num < num_classes.
+        # if major_classes_num = num_classes, it equals to IID partition
+        times = [0 for _ in range(num_classes)]
+        contain = []
+        class_idxs = list(range(num_classes))
+        for cid in range(num_clients):
+            current = [cid % num_classes]
+            times[cid % num_classes] += 1
+            j = 1
+            while j < major_classes_num:
+                # ind = np.random.randint(num_classes)
+                ind, class_idxs = sample_without_replacement(class_idxs)
+                if ind not in current:
+                    j += 1
+                    current.append(ind)
+                    times[ind] += 1
+            contain.append(current)
+
+        for k in range(num_classes):
+            idx_k = np.where(targets == k)[0]
+            np.random.shuffle(idx_k)
+            split = np.array_split(idx_k, times[k])
+            ids = 0
+            for cid in range(num_clients):
+                if k in contain[cid]:
+                    idx_batch[cid] = np.append(idx_batch[cid], split[ids])
+                    ids += 1
+
+        client_dict = {cid: idx_batch[cid] for cid in range(num_clients)}
+        return client_dict
+
+    def _perform_partition(self):
+        if self.partition == "noniid-#label":
+            # label-distribution-skew:quantity-based
+            client_dict = self.label_skew_quantity_based_partition(self.targets, self.num_clients,
+                                                                self.num_classes,
+                                                                self.major_classes_num)
+
+        else:
+            client_dict = super._perform_partition()
+
+        return client_dict
+
 class PartitionedCUB(FedDataset):
     """:class:`FedDataset` with partitioning preprocess. For detailed partitioning, please
     check `Federated Dataset and DataPartitioner <https://fedlab.readthedocs.io/en/master/tutorials/dataset_partition.html>`_.
@@ -116,7 +188,29 @@ class PartitionedCUB(FedDataset):
             
     
     def augment_all_classes(self, dataset, partitioner, is_train):
-       raise NotImplementedError
+        if (self.augment_percent <= 0):
+            return
+        for cid in range(self.num_clients):
+            extra_client_dict = {}
+            extra_client_dict[cid] = []
+        indices =  np.arange(len(dataset.targets))
+        # sort sample indices according to labels
+        indices_targets = np.vstack((indices, dataset.targets))
+        indices_targets = indices_targets[:, indices_targets[1, :].argsort()]
+        # corresponding labels after sorting are [0, .., 0, 1, ..., 1, ...]
+        #sorted_indices = indices_targets[0, :]
+        #print(indices_targets)
+    
+        for cid in range(self.num_clients):
+            augment_nb_instances = max(ceil(self.augment_percent*len(partitioner.client_dict[cid])), 5)
+            #print(augment_nb_instances)
+        
+
+            for classid in range(self.number_classes):
+                extra_client_dict[cid] = (np.random.permutation(indices_targets[0,indices_targets[1,:] ==classid]))[:augment_nb_instances]
+                #print(len(extra_client_dict[cid]), cid, classid)
+                partitioner.client_dict[cid] = np.unique(np.hstack((partitioner.client_dict[cid] , extra_client_dict[cid])))
+
 
     def preprocess(self,
                    partition="iid",
