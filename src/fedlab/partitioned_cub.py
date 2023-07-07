@@ -103,7 +103,8 @@ class CUBPartitionerExt(VisionPartitioner):
         # if major_classes_num = num_classes, it equals to IID partition
         times = [0 for _ in range(num_classes)]
         contain = []
-        class_idxs = list(range(num_classes))
+        if num_clients < num_classes:
+            class_idxs = list(range(num_clients, num_classes))
         for cid in range(num_clients):
             current = [cid % num_classes]
             times[cid % num_classes] += 1
